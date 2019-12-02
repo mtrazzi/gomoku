@@ -24,7 +24,7 @@ def run_script(filename):
   counter = 0
   script.board.print_map()
   for move in script.moves:
-      x, y = move
+      x, y = move[0]-1, move[1]-1
       script.board.add_point(counter + 1, x, y)
       counter = (counter + 1) % 2
       script.board.kill_dead_stones(counter + 1, (x,y))
