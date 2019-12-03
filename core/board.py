@@ -17,7 +17,8 @@ COMB_LIST = [[-1, -1, 1, 1], # distance of 1
             [0, 0 - 1, 0, 1],
             [1, 0, -1 ,0],
             [1, -1, -1, 1],
-            [-1, 0, 1, 0]]
+            [-1, 0, 1, 0],
+            [0, -2, 0, 1]]
 
 class Board(object):
   def __init__(self):
@@ -85,17 +86,13 @@ class Board(object):
       m = self.map
       x_0, y_0, x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4 = x, y, x + dx, y + dy, x + 2 * dx, y + 2 * dy, x + 3 * dx, y + 3 * dy, x + 4 * dx, y + 4 * dy
       x_min, x_max, y_min, y_max = min(x_0, x_4), max(x_0, x_4), min(y_0, y_4), max(y_0, y_4)
-      return (x_min > 0 and x_max < len(m) - 1 and
-             y_min > 0 and y_max < len(m) - 1 and
+      return (x_min >= 0 and x_max <= len(m) - 1 and
+             y_min >= 0 and y_max <= len(m) - 1 and
              m[x_1][y_1] == m[x_2][y_2] == m[x_3][y_3] and
              m[x_0][y_0] == m[x_4][y_4] == 0)
     count = 0
-    print(f"({x},{y})")
     for comb in COMB_LIST:
       count += aux(x + comb[0], y + comb[1], comb[2], comb[3])
-      if aux(x + comb[0], y + comb[1], comb[2], comb[3]) > 0:
-        print(comb)
-    print(f"count is: {count}")     
     return count >= 2
 
   def get_input(self):

@@ -19,3 +19,17 @@
 6 3 # illegal move!!!
 3 6 # illegal move!!!
 2 5 # illegal move!!!
+6 4
+19 19
+6 6
+18 18
+6 5 # illegal move!!!
+7 4
+17 17
+7 5
+12 12
+5 6
+8 8
+2 4
+19 2
+4 6 # illegal move!!!
