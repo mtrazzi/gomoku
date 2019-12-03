@@ -25,16 +25,15 @@ class Script(object):
 def run_script(filename):
   script = Script(filename)
   # counter is to alternate between black (id = 1) and white (id = 2) stones
-  counter = 0
   script.board.print_map()
   for move in script.moves:
     x, y = move[0]-1, move[1]-1
     # if move not valid skip it
-    if not script.board.respect_rules(counter + 1, x, y):
+    if not script.board.respect_rules(x, y):
       print("Invalid move")
       continue
-    script.board.add_point(counter + 1, x, y)
-    counter = (counter + 1) % 2
-    # kill stones of opposite colors
-    script.board.kill_dead_stones(counter + 1, (x,y))
-    script.board.print_map()
+    done = script.board.do_move(x, y)
+    if done:
+      print(f"done at move: {move[0]},{move[1]}")
+      break
+  print(f'Winner is: {script.board.color}')

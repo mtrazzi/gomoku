@@ -20,27 +20,33 @@ COMB_LIST = [[-1, -1, 1, 1], # distance of 1
             [-1, 0, 1, 0],
             [0, -2, 0, 1]]
 
+FIVE_LIST = [[1, 0], [-1, 1], [0, 1], [1, 1]]
+
 class Board(object):
-  def __init__(self):
-    self.map = self.empty_map(19)
+  def __init__(self, size=19):
+    self.map = self.empty_map(size)
+    self.size = size
     self.capture_counter = [0, 0]
+    self.color = 1
+    self.dic = {0: ".", 1: "X", 2: "O", 3: "*"}
 
   def print_map(self):
-    dic = {0: ".", 1: "X", 2: "O", 3: "*"}
     self.change_hoshi()
     sys.stdout.write("ₓ\\ʸ")
-    for j in range(len(self.map)):
+    for j in range(self.size):
       sys.stdout.write("%2d " % (j + 1))
     print()
-    for i in range(len(self.map)):
+    for i in range(self.size):
       sys.stdout.write("%2d " % (i + 1))
       for x in self.map[i]:
-        sys.stdout.write("%2c " % dic[x])
+        sys.stdout.write("%2c " % self.dic[x])
       print()
+    print(f'X: {self.capture_counter[0]} captured')
+    print(f'O: {self.capture_counter[1]} captured')
     self.change_hoshi()
 
   def	change_hoshi(self):
-    size = len(self.map)
+    size = self.size
     for i in (range(size)):
       for j in (range(size)):
         if i in [3,9,15] and j in [3,9,15] and self.map[i][j] in [0, 3]:
@@ -51,14 +57,22 @@ class Board(object):
       return np.zeros((size, size))
 
   def	add_point(self, color, x, y):
-      self.map[x][y] = color
+    self.map[x][y] = color
+    
+  def do_move(self, x, y):
+    self.add_point(self.color, x, y)
+    # kill stones of opposite colors
+    self.kill_dead_stones(3 - self.color, (x,y))
+    self.color = 3 - self.color
+    self.print_map()
+    return self.is_done()
 
   def RepresentsInt(self, s):
-      try:
-        int(s)
-        return True
-      except ValueError:
-        return False
+    try:
+      int(s)
+      return True
+    except ValueError:
+      return False
 
   def is_valid_input(self, s):
     if (len(s.split(None)) != 2):
@@ -67,32 +81,36 @@ class Board(object):
         return False
     x = int(s.split()[0])
     y = int(s.split()[1])
-    return ((x > 0 and x <= len(self.map)) and (y > 0 and y <= len(self.map)) \
+    return ((x > 0 and x <= self.size) and (y > 0 and y <= self.size) \
     and (self.map[x - 1][y - 1] == 0))
     
-  def respect_rules(self, color, x, y):
+  def respect_rules(self, x, y):
     # test adding x,y and see if it breaks the two two rule
-    self.add_point(color, x, y)
+    self.add_point(self.color, x, y)
 
     # if it kills stones, it's ok to have free threes
-    result = self.list_of_dead(color, (x,y)) or not self.two_free_threes(x, y)
+    result = self.list_of_dead(self.color, (x,y)) or not self.two_free_threes(x, y)
 
     # put back the blank
     self.add_point(0, x, y)
     return result
+  
+  def coordinates(self, x, y, dx, dy):
+    return [x, y, x + dx, y + dy, x + 2 * dx, y + 2 * dy, x + 3 * dx, y + 3 * dy, x + 4 * dx, y + 4 * dy]
+
+  def aux(self, x, y, dx, dy, blank=0):
+    m = self.map
+    x_0, y_0, x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4 = self.coordinates(x, y, dx, dy)
+    x_min, x_max, y_min, y_max = min(x_0, x_4), max(x_0, x_4), min(y_0, y_4), max(y_0, y_4)
+    return (x_min >= 0 and x_max <= len(m) - 1 and
+            y_min >= 0 and y_max <= len(m) - 1 and
+            m[x_1][y_1] == m[x_2][y_2] == m[x_3][y_3] and
+            m[x_0][y_0] == m[x_4][y_4] == blank)
 
   def two_free_threes(self, x, y):
-    def aux(x, y, dx, dy):
-      m = self.map
-      x_0, y_0, x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4 = x, y, x + dx, y + dy, x + 2 * dx, y + 2 * dy, x + 3 * dx, y + 3 * dy, x + 4 * dx, y + 4 * dy
-      x_min, x_max, y_min, y_max = min(x_0, x_4), max(x_0, x_4), min(y_0, y_4), max(y_0, y_4)
-      return (x_min >= 0 and x_max <= len(m) - 1 and
-             y_min >= 0 and y_max <= len(m) - 1 and
-             m[x_1][y_1] == m[x_2][y_2] == m[x_3][y_3] and
-             m[x_0][y_0] == m[x_4][y_4] == 0)
     count = 0
     for comb in COMB_LIST:
-      count += aux(x + comb[0], y + comb[1], comb[2], comb[3])
+      count += self.aux(x + comb[0], y + comb[1], comb[2], comb[3])
     return count >= 2
 
   def get_input(self):
@@ -124,16 +142,40 @@ class Board(object):
     l = []
     if x > 1 and self.is_dead(x - 1, y, color):
       l += [(x - 1, y), (x - 2, y)]
-    elif x < len(self.map) - 1 and self.is_dead(x + 1, y, color):
+    elif x < self.size - 1 and self.is_dead(x + 1, y, color):
       l += [(x + 1, y), (x + 2, y)]
     elif y > 1 and self.is_dead(x, y - 1, color):
       l += [(x, y - 1), (x, y - 2)]
-    elif y < len(self.map) - 1 and self.is_dead(x, y + 1, color):
+    elif y < self.size - 1 and self.is_dead(x, y + 1, color):
       l += [(x, y + 1), (x, y + 2)]
     return l
 
   def	kill_dead_stones(self, color, last_move):
     l = self.list_of_dead(color, last_move)
-    #TODO: increment self.capture counter and maybe condition for win
+    self.capture_counter[(3 - color) - 1] += len(l)
     for p in l:
       self.map[p[0]][p[1]] = 0
+
+  def is_done(self):
+    # if someone reached 10 captures, game is done
+    if self.capture_counter[0] >= 10 or self.capture_counter[1] >= 10:
+      return True
+    coord = self.five_aligned()
+    # if five aligned were found, it only counts if opponent cannot do anything
+    if coord:
+      return not self.can_capture_five(self.color) and not self.can_reach_ten(3 - self.color)
+  
+  #TODO: possible to optimize x600 if check only for last move + specific color
+  def five_aligned(self):
+    for x in range(self.size):
+      for y in range(self.size):
+        for (dx, dy) in FIVE_LIST:
+          if self.aux(x, y, dx, dy, self.map[x][y]):
+            return self.coordinates(x, y, dx, dy)
+    return None
+  
+  def can_capture_five(self, color_of_five):
+    return False
+
+  def can_reach_ten(self, color):
+    return False
