@@ -63,9 +63,10 @@ class Board(object):
     self.add_point(self.color, x, y)
     # kill stones of opposite colors
     self.kill_dead_stones(3 - self.color, (x,y))
+    done = self.is_done()
     self.color = 3 - self.color
     self.print_map()
-    return self.is_done()
+    return done
 
   def RepresentsInt(self, s):
     try:
@@ -96,16 +97,16 @@ class Board(object):
     return result
   
   def coordinates(self, x, y, dx, dy):
-    return [x, y, x + dx, y + dy, x + 2 * dx, y + 2 * dy, x + 3 * dx, y + 3 * dy, x + 4 * dx, y + 4 * dy]
+    return [(x, y), (x + dx, y + dy), (x + 2 * dx, y + 2 * dy), (x + 3 * dx, y + 3 * dy), (x + 4 * dx, y + 4 * dy)]
 
   def aux(self, x, y, dx, dy, blank=0):
     m = self.map
-    x_0, y_0, x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4 = self.coordinates(x, y, dx, dy)
+    (x_0, y_0), (x_1, y_1), (x_2, y_2), (x_3, y_3), (x_4, y_4) = self.coordinates(x, y, dx, dy)
     x_min, x_max, y_min, y_max = min(x_0, x_4), max(x_0, x_4), min(y_0, y_4), max(y_0, y_4)
     return (x_min >= 0 and x_max <= len(m) - 1 and
             y_min >= 0 and y_max <= len(m) - 1 and
             m[x_1][y_1] == m[x_2][y_2] == m[x_3][y_3] and
-            m[x_0][y_0] == m[x_4][y_4] == blank)
+            m[x_0][y_0] == m[x_4][y_4] == (0 if blank == 0 else m[x_1][y_1]))
 
   def two_free_threes(self, x, y):
     count = 0
@@ -163,19 +164,41 @@ class Board(object):
     coord = self.five_aligned()
     # if five aligned were found, it only counts if opponent cannot do anything
     if coord:
-      return not self.can_capture_five(self.color) and not self.can_reach_ten(3 - self.color)
+      # print(f"reaching five aligned with self.color=={self.color}")
+      return not self.can_capture_five(coord) and not self.can_reach_ten(3 - self.color)
   
   #TODO: possible to optimize x600 if check only for last move + specific color
   def five_aligned(self):
     for x in range(self.size):
       for y in range(self.size):
         for (dx, dy) in FIVE_LIST:
-          if self.aux(x, y, dx, dy, self.map[x][y]):
+          if self.map[x][y] > 0 and self.aux(x, y, dx, dy, self.map[x][y]):
             return self.coordinates(x, y, dx, dy)
     return None
   
-  def can_capture_five(self, color_of_five):
+  def can_capture_five(self, coord):
+    to_capture_col = self.map[coord[0][0]][coord[0][1]]
+    for x in range(self.size):
+      for y in range(self.size):
+        if self.map[x][y] == 0:
+          self.add_point(3 - to_capture_col, x, y)
+          dead_list = self.list_of_dead(to_capture_col, (x,y))
+          for dead in dead_list:
+            if dead in coord:
+              return True
+          self.add_point(0, x, y)
     return False
 
   def can_reach_ten(self, color):
+    if self.capture_counter[color - 1] < 8:
+      return False
+    for x in range(self.size):
+      for y in range(self.size):
+        if self.map[x][y] == 0:
+          self.add_point(color, x, y)
+          l = self.list_of_dead(3 - color, (x,y))
+          self.add_point(0, x, y)
+          if l:
+            return True
+          
     return False

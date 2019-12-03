@@ -7,8 +7,7 @@ class Script(object):
     self.board = Board()
     self.load_text_file(filename)
 
-  def load_text_file(self, filename='capture.txt', dir_name='scripts'):
-    path = os.path.join(dir_name, filename)
+  def load_text_file(self, path='scripts/capture.txt'):
     with open(path, 'r') as f:
       raw_lines = [line for line in f]
       clean_lines = []
@@ -34,6 +33,5 @@ def run_script(filename):
       continue
     done = script.board.do_move(x, y)
     if done:
-      print(f"done at move: {move[0]},{move[1]}")
+      print(f'Winner is: {3 - script.board.color}')
       break
-  print(f'Winner is: {script.board.color}')
