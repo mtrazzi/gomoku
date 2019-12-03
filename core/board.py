@@ -1,7 +1,23 @@
 import numpy as np
 import sys
 import os
-from core import rules
+
+COMB_LIST = [[-1, -1, 1, 1], # distance of 1
+            [-1, 0, 1, 0],
+            [-1, 1, 1, -1],
+            [0, 1, 0, -1],
+            [-2, -2, 1, 1], # distance of two starting from top/right
+            [-2, 0, 1, 0],
+            [-2, 2, 1, -1],
+            [0, 2, 0, -1],
+            [0, 0, 1, 1], # distance of two starting from , 0
+            [0, 0, 1, 0],
+            [0, 0, 1, -1],
+            [0, 0, 0, -1],
+            [0, 0 - 1, 0, 1],
+            [1, 0, -1 ,0],
+            [1, -1, -1, 1],
+            [-1, 0, 1, 0]]
 
 class Board(object):
   def __init__(self):
@@ -11,7 +27,7 @@ class Board(object):
   def print_map(self):
     dic = {0: ".", 1: "X", 2: "O", 3: "*"}
     self.change_hoshi()
-    sys.stdout.write("   ")
+    sys.stdout.write("ₓ\\ʸ")
     for j in range(len(self.map)):
       sys.stdout.write("%2d " % (j + 1))
     print()
@@ -74,19 +90,12 @@ class Board(object):
              m[x_1][y_1] == m[x_2][y_2] == m[x_3][y_3] and
              m[x_0][y_0] == m[x_4][y_4] == 0)
     count = 0
-    for comb in [[x - 1, y - 1, 1, 1], # distance of 1
-                 [x - 1, y, 1, 0],
-                 [x - 1, y + 1, 1, -1],
-                 [x, y + 1, 0, -1],
-                 [x - 2, y - 2, 1, 1], # distance of two starting from top/right
-                 [x - 2, y, 1, 0],
-                 [x - 2, y + 2, 1, -1],
-                 [x, y + 2, 0, -1],
-                 [x, y, 1, 1], # distance of two starting from x, y
-                 [x, y, 1, 0],
-                 [x, y, 1, -1],
-                 [x, y, 0, -1]]:
-      count += aux(comb[0], comb[1], comb[2], comb[3])
+    print(f"({x},{y})")
+    for comb in COMB_LIST:
+      count += aux(x + comb[0], y + comb[1], comb[2], comb[3])
+      if aux(x + comb[0], y + comb[1], comb[2], comb[3]) > 0:
+        print(comb)
+    print(f"count is: {count}")     
     return count >= 2
 
   def get_input(self):
@@ -98,7 +107,6 @@ class Board(object):
         print("Move badly formated : must type \"x y\" with x and y integers")
         print("Example : \"2 3\"")
         print("Intersection must be empty (must be \'.\' or *)")
-        print("Can capture two stones")
       user_input = input("Your next move (type \"exit()\" to quit): $>")
     if (user_input == "exit()"):
       sys.exit()
@@ -129,5 +137,6 @@ class Board(object):
 
   def	kill_dead_stones(self, color, last_move):
     l = self.list_of_dead(color, last_move)
+    #TODO: increment self.capture counter and maybe condition for win
     for p in l:
       self.map[p[0]][p[1]] = 0

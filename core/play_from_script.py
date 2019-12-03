@@ -11,12 +11,15 @@ class Script(object):
     path = os.path.join(dir_name, filename)
     with open(path, 'r') as f:
       raw_lines = [line for line in f]
-      for idx,line in enumerate(raw_lines):
+      clean_lines = []
+      for line in raw_lines:
         if line[0] == '#':
-          raw_lines.remove(line)
+          continue
         elif '#' in line:
-          raw_lines[idx] = line[:line.index('#')]
-      lines = [[int(x) for x in l.rstrip('\n').split()] for l in raw_lines]
+          clean_lines.append(line[:line.index('#')])
+        else:
+          clean_lines.append(line)
+      lines = [[int(x) for x in l.rstrip('\n').split()] for l in clean_lines]
     self.moves = lines
 
 def run_script(filename):

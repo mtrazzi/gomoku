@@ -14,5 +14,8 @@
 15 15
 3 5
 16 16
-# 3 3 # illegal move!!!
-# 5 5 # illegal move!!!
+3 3 # illegal move!!!
+5 5 # illegal move!!!
+6 3 # illegal move!!!
+3 6 # illegal move!!!
+2 5 # illegal move!!!
