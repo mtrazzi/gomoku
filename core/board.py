@@ -6,6 +6,7 @@ from core import rules
 class Board(object):
   def __init__(self):
     self.map = self.empty_map(19)
+    self.capture_counter = [0, 0]
 
   def print_map(self):
     dic = {0: ".", 1: "X", 2: "O", 3: "*"}
@@ -86,11 +87,11 @@ class Board(object):
                  [x, y, 1, -1],
                  [x, y, 0, -1]]:
       count += aux(comb[0], comb[1], comb[2], comb[3])
-    return comb >= 2
+    return count >= 2
 
   def get_input(self):
     user_input = ""
-    while (user_input != "exit" and (not self.is_valid_input(user_input))):
+    while (user_input != "exit()" and (not self.is_valid_input(user_input))):
       os.system("clear")
       self.print_map()
       if (user_input != ""):
@@ -98,8 +99,8 @@ class Board(object):
         print("Example : \"2 3\"")
         print("Intersection must be empty (must be \'.\' or *)")
         print("Can capture two stones")
-      user_input = input("Your next move (type \"exit\" to quit): $>")
-    if (user_input == "exit"):
+      user_input = input("Your next move (type \"exit()\" to quit): $>")
+    if (user_input == "exit()"):
       sys.exit()
     return (int(user_input.split(None)[0]), int(user_input.split(None)[1]))
     

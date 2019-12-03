@@ -1,0 +1,18 @@
+# check that doing two free threes is only allowed if it captures some stone
+4 3
+9 9
+4 3
+10 10
+4 5
+11 11
+5 4
+13 13
+3 4
+14 14
+4 4 # illegal move!!!
+5 3
+15 15
+3 5
+16 16
+# 3 3 # illegal move!!!
+# 5 5 # illegal move!!!
