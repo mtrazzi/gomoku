@@ -216,4 +216,7 @@ class Board(object):
           new_board = copy.deepcopy(self) # ugly now, maybe there is more optimized way to do it
           new_board.do_move(x, y)
           l.append(new_board)
+    # print("------------------------############## CHILD ################----------------------------------")
+    # for child in l[:3]:
+    #   child.print_map()
     return l
