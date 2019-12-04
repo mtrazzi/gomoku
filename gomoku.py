@@ -8,6 +8,7 @@ from core.clean.player import Player
 from core.clean.board import Board
 from core.clean.rules import Rules
 from core.clean.script import Script
+from core.agent import MinMaxAgent, RandomAgent, AGENTS
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -28,7 +29,12 @@ if __name__ == '__main__':
                       help="algorithm for the bot")
   args = parser.parse_args()
 
-  players = [Player(1), Player(2)]
+  if args.mode in ["pvp", "script"]:
+    players = [Player(1), Player(2)]
+  elif args.mode == "hvsbot":
+    players = [Player(1), AGENTS[args.algorithm[0]]()]
+  elif args.mode == "botvsbot":
+    players = [AGENTS[args.algorithm[0]](), AGENTS[args.algorithm[1]]()]
 
   script = Script(args.filename) if args.filename else None
 
@@ -36,6 +42,5 @@ if __name__ == '__main__':
                      players=players,
                      rules=Rules(),
                      mode=args.mode,
-                     algorithm=args.algorithm,
                      script=script)
   game.start()

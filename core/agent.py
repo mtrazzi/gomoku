@@ -5,9 +5,19 @@ import copy
 
 from core.board import Board
 from core.heuristics import simple_heuristic
+from core.clean.player import Player
 
-class RandomAgent(object):
-  def __init__(self, size=19):
+class Agent(Player):
+  """Class Agent
+  """
+  def __init__(self, stone):
+    super().__init__(stone)
+
+class RandomAgent(Agent):
+  """Class RandomAgent
+  """
+  def __init__(self, stone, size=19):
+    super().__init__(stone)
     self.size = size
 
   def play(self, board):
@@ -18,19 +28,21 @@ class RandomAgent(object):
         break
     return x, y
 
-class MinMaxAgent(object):
-  def __init__(self, size=5, bot_color=1):
+class MinMaxAgent(Agent):
+  """Class MinMaxAgent
+  """
+  def __init__(self, stone=1, size=5):
+    super().__init__(stone)
     self.board = Board(size)
     self.size = size
-    self.bot_color = bot_color
 
-  def play(self, board, depth=0):
+  def play(self, game_handler, depth=0):
     """Returns best move given current board position."""
     score_map = np.full((self.size, self.size), -np.inf)
     for x in range(self.size):
       for y in range(self.size):
-        if board.respect_rules(x, y):
-          candidate = copy.deepcopy(board)
+        if game_handler.can_place(x, y, self):
+          candidate = copy.deepcopy(game_handler.board)
           candidate.do_move(x, y)
           score_map[x][y] = self.minimax(candidate, depth, True)
     return np.unravel_index(np.argmax(score_map, axis=None), score_map.shape)
@@ -39,7 +51,7 @@ class MinMaxAgent(object):
     """Evaluation function."""
     position = board.map
     if heuristic == 'simple':
-      return simple_heuristic(position, self.bot_color)
+      return simple_heuristic(position, self.stone)
     return 0
   
   def minimax(self, node, depth, maximizing_player):
@@ -77,8 +89,8 @@ def play_agent(agent_type='random'):
   print(f'{winner} won!')
 
 def botvsbot(agent_type_1='minmax', agent_type_2='minmax'):
-  agent_1 = AGENTS[agent_type_1](bot_color=1)
-  agent_2 = AGENTS[agent_type_2](bot_color=2)
+  agent_1 = AGENTS[agent_type_1]()
+  agent_2 = AGENTS[agent_type_2]()
   board = Board(5)
   counter = 0
   while True:

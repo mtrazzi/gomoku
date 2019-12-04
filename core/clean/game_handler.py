@@ -1,5 +1,7 @@
 import time
 
+from core.agent import Agent
+
 class GameHandler(object):
   """Class GameHandler
 
@@ -20,12 +22,11 @@ class GameHandler(object):
   error: str
     Error string
   """
-  def __init__(self, board, players, rules, mode, algorithm, script=None):
+  def __init__(self, board, players, rules, mode, script=None):
     self.board = board
     self.players = players
     self.rules = rules
     self.mode = mode
-    self.algorithm = algorithm
     self.script = script
     self.current = 0
     self.error = ""
@@ -36,7 +37,9 @@ class GameHandler(object):
       player = self.players[self.current]
       print(self)
 
-      if not self.script or not self.script.running():
+      if isinstance(player, Agent):
+        move = player.play(self)
+      elif not self.script or not self.script.running():
         move = player.input()
       else:
         move = self.script.input()
@@ -45,7 +48,8 @@ class GameHandler(object):
       if len(move) == 0:
         return
 
-      if self.place(*move, player):
+      if self.can_place(*move, player):
+        player.last_move = move[0], move[1]
         self.rules.capture(self.board, player)
         winner = self.rules.check_winner(self.board, self.players)
         if winner:
@@ -56,7 +60,7 @@ class GameHandler(object):
         time.sleep(0.75)
     return
 
-  def place(self, x, y, player):
+  def can_place(self, x, y, player):
     """Try to place player stone at emplacement (x, y)
 
     Parameters
@@ -82,7 +86,6 @@ class GameHandler(object):
       self.board.remove(x, y)
       self.error = f"\033[1;31mNo double free-threes allowed\033[0m"
       return False
-    player.last_move = (x, y)
     return True
 
   def __str__(self):
