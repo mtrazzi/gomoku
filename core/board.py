@@ -2,25 +2,49 @@ import numpy as np
 import sys
 import os
 
-COMB_LIST = [[-1, -1, 1, 1], # distance of 1
-            [-1, 0, 1, 0],
-            [-1, 1, 1, -1],
-            [0, 1, 0, -1],
-            [-2, -2, 1, 1], # distance of two starting from top/right
-            [-2, 0, 1, 0],
-            [-2, 2, 1, -1],
-            [0, 2, 0, -1],
-            [0, 0, 1, 1], # distance of two starting from , 0
-            [0, 0, 1, 0],
-            [0, 0, 1, -1],
-            [0, 0, 0, -1],
-            [0, 0 - 1, 0, 1],
-            [1, 0, -1 ,0],
-            [1, -1, -1, 1],
-            [-1, 0, 1, 0],
-            [0, -2, 0, 1]]
+COMB_LIST = [
+  [-1, -1, 1, 1], # distance of 1
+  [-1, 0, 1, 0],
+  [-1, 1, 1, -1],
+  [0, 1, 0, -1],
+  [-2, -2, 1, 1], # distance of two starting from top/right
+  [-2, 0, 1, 0],
+  [-2, 2, 1, -1],
+  [0, 2, 0, -1],
+  [0, 0, 1, 1], # distance of two starting from , 0
+  [0, 0, 1, 0],
+  [0, 0, 1, -1],
+  [0, 0, 0, -1],
+  [0, 0 - 1, 0, 1],
+  [1, 0, -1 ,0],
+  [1, -1, -1, 1],
+  [-1, 0, 1, 0],
+  [0, -2, 0, 1]
+]
 
 FIVE_LIST = [[1, 0], [-1, 1], [0, 1], [1, 1]]
+
+BOUNDARIES_LIST = [ # (x_max, x_min, y_max, y_min)
+  (0,  0, 0, -3),
+  (0,  0, 3,  0),
+  (3,  0, 0,  0),
+  (0, -3, 0,  0),
+  (3,  0, 3,  0),
+  (0, -3, 0, -3),
+  (3,  0, 0, -3),
+  (0, -3, 3,  0),
+]
+
+PAIR_LIST = [ # (x, y)
+  [( 0, -1), ( 0, -2), ( 0, -3)],
+  [( 0,  1), ( 0,  2), ( 0,  3)],
+  [( 1,  0), ( 2,  0), ( 3,  0)],
+  [(-1,  0), (-2,  0), (-3,  0)],
+  [( 1,  1), ( 2,  2), ( 3,  3)],
+  [(-1, -1), (-2, -2), (-3, -3)],
+  [( 1, -1), ( 2, -2), ( 3, -3)],
+  [(-1,  1), (-2,  2), (-3,  3)]
+]
 
 class Board(object):
   def __init__(self, size=19):
@@ -58,7 +82,7 @@ class Board(object):
 
   def	add_point(self, color, x, y):
     self.map[x][y] = color
-    
+
   def do_move(self, x, y):
     self.add_point(self.color, x, y)
     # kill stones of opposite colors
@@ -84,7 +108,7 @@ class Board(object):
     y = int(s.split()[1])
     return ((x > 0 and x <= self.size) and (y > 0 and y <= self.size) \
     and (self.map[x - 1][y - 1] == 0))
-    
+
   def respect_rules(self, x, y):
     # test adding x,y and see if it breaks the two two rule
     self.add_point(self.color, x, y)
@@ -95,7 +119,7 @@ class Board(object):
     # put back the blank
     self.add_point(0, x, y)
     return result
-  
+
   def coordinates(self, x, y, dx, dy):
     return [(x, y), (x + dx, y + dy), (x + 2 * dx, y + 2 * dy), (x + 3 * dx, y + 3 * dy), (x + 4 * dx, y + 4 * dy)]
 
@@ -127,7 +151,7 @@ class Board(object):
     if (user_input == "exit()"):
       sys.exit()
     return (int(user_input.split(None)[0]), int(user_input.split(None)[1]))
-    
+
   def is_dead(self, x ,y, c):
     m = self.map
     if not m[x][y] == c:
@@ -151,11 +175,32 @@ class Board(object):
       l += [(x, y + 1), (x, y + 2)]
     return l
 
+  def find_dead_pair(self, color, last_move):
+    x, y = last_move
+    stone = []
+    for pair, bound in zip(PAIR_LIST, BOUNDARIES_LIST):
+      x_max, x_min, y_max, y_min = bound
+      if x + x_max >= self.size or y + y_max >= self.size or x + x_min < 0 or y + y_min < 0:
+        continue
+      offset_x, offset_y = pair[2]
+      if self.map[x + offset_x][y + offset_y] != color:
+        continue
+
+      opponent = (color % 2) + 1
+      stone1_x, stone1_y = x + pair[0][0], y + pair[0][1]
+      stone2_x, stone2_y = x + pair[1][0], y + pair[1][1]
+      if self.map[stone1_x][stone1_y] == opponent and self.map[stone2_x][stone2_y] == opponent:
+        stone.append([stone1_x, stone1_y])
+        stone.append([stone2_x, stone2_y])
+
+    return stone
+
   def	kill_dead_stones(self, color, last_move):
-    l = self.list_of_dead(color, last_move)
-    self.capture_counter[(3 - color) - 1] += len(l)
-    for p in l:
-      self.map[p[0]][p[1]] = 0
+    captures = self.find_dead_pair(color, last_move)
+    self.capture_counter[(3 - color) - 1] += len(captures)
+    for stone in captures:
+      x, y = stone
+      self.map[x][y] = 0
 
   def is_done(self):
     # if someone reached 10 captures, game is done
@@ -166,7 +211,7 @@ class Board(object):
     if coord:
       # print(f"reaching five aligned with self.color=={self.color}")
       return not self.can_capture_five(coord) and not self.can_reach_ten(3 - self.color)
-  
+
   #TODO: possible to optimize x600 if check only for last move + specific color
   def five_aligned(self):
     for x in range(self.size):
@@ -175,7 +220,7 @@ class Board(object):
           if self.map[x][y] > 0 and self.aux(x, y, dx, dy, self.map[x][y]):
             return self.coordinates(x, y, dx, dy)
     return None
-  
+
   def can_capture_five(self, coord):
     to_capture_col = self.map[coord[0][0]][coord[0][1]]
     for x in range(self.size):
@@ -200,5 +245,5 @@ class Board(object):
           self.add_point(0, x, y)
           if l:
             return True
-          
+
     return False

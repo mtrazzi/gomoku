@@ -1,4 +1,4 @@
-NAME := npuzzle
+NAME := gomoku
 
 .PHONY: install test clean
 

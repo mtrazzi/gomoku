@@ -1,7 +1,7 @@
 # check that doing two free threes is only allowed if it captures some stone
 4 3
 9 9
-4 3
+19 1
 10 10
 4 5
 11 11

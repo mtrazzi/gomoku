@@ -23,7 +23,6 @@ class Script(object):
 
 def run_script(filename):
   script = Script(filename)
-  # counter is to alternate between black (id = 1) and white (id = 2) stones
   script.board.print_map()
   for move in script.moves:
     x, y = move[0]-1, move[1]-1
