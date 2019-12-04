@@ -33,7 +33,7 @@ class Board(object):
     self.dic = {0: ".", 1: "X", 2: "O", 3: "*"}
 
   def print_map(self):
-    self.change_hoshi()
+    # self.change_hoshi()
     sys.stdout.write("ₓ\\ʸ")
     for j in range(self.size):
       sys.stdout.write("%2d " % (j + 1))
@@ -45,7 +45,7 @@ class Board(object):
       print()
     print(f'X: {self.capture_counter[0]} captured')
     print(f'O: {self.capture_counter[1]} captured')
-    self.change_hoshi()
+    # self.change_hoshi()
 
   def	change_hoshi(self):
     size = self.size
@@ -67,7 +67,7 @@ class Board(object):
     self.kill_dead_stones(3 - self.color, (x,y))
     done = self.is_done()
     self.color = 3 - self.color
-    self.print_map()
+    # self.print_map()
     return done
 
   def RepresentsInt(self, s):

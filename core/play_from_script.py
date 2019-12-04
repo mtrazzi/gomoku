@@ -1,10 +1,11 @@
 import os
 
 from core.board import Board
+from core.heuristics import score_for_color
 
 class Script(object):
   def __init__(self, filename='capture.txt'):
-    self.board = Board()
+    self.board = Board(10)
     self.load_text_file(filename)
 
   def load_text_file(self, path='scripts/capture.txt'):
@@ -32,6 +33,7 @@ def run_script(filename):
       print("Invalid move")
       continue
     done = script.board.do_move(x, y)
+    score = score_for_color(script.board.map, script.board.color, script.board.color)
     if done:
       print(f'Winner is: {3 - script.board.color}')
       break
