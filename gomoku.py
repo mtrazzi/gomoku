@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-from core.play_from_script import run_script
-from core.agent import play_agent, botvsbot
 from core.clean.game_handler import GameHandler
 from core.clean.player import Player
 from core.clean.board import Board
 from core.clean.rules import Rules
 from core.clean.script import Script
-from core.agent import MinMaxAgent, RandomAgent, AGENTS
+from core.clean.bot import MiniMaxAgent, RandomAgent, AGENTS
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -32,9 +30,9 @@ if __name__ == '__main__':
   if args.mode in ["pvp", "script"]:
     players = [Player(1), Player(2)]
   elif args.mode == "hvsbot":
-    players = [Player(1), AGENTS[args.algorithm[0]]()]
+    players = [Player(1), AGENTS[args.algorithm[0]](2)]
   elif args.mode == "botvsbot":
-    players = [AGENTS[args.algorithm[0]](), AGENTS[args.algorithm[1]]()]
+    players = [AGENTS[args.algorithm[0]](1), AGENTS[args.algorithm[1]](2)]
 
   script = Script(args.filename) if args.filename else None
 

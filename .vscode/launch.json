@@ -12,6 +12,7 @@
       "args": [
         "-a",
         "minmax",
+        "minmax",
         "-m",
         "botvsbot"
       ]

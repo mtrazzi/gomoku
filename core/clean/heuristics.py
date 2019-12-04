@@ -1,4 +1,4 @@
-from core.utils import all_equal, coordinates
+from core.clean.utils import all_equal, coordinates
 
 SLOPES = [[1, 0], [-1, 1], [0, 1], [1, 1]]
 
@@ -34,18 +34,12 @@ def score_for_color(position, stones_color, to_move_color):
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
           tot += score(nb_cons, op_ends, stones_color == to_move_color)
-  # print("with board:")
-  # print(position)
-  # print(f"{stones_color}")
   return tot
 
 def simple_heuristic(position, to_move_color):
   """Returns score for given position, for player `to_move_color`."""
-  # print(to_move_color, 3 - to_move_color) SLOW with 2 1
   first_score = score_for_color(position, to_move_color, to_move_color)
   second_score = score_for_color(position, 3 - to_move_color, to_move_color)
-  # print(position)
-  # print(first_score, second_score)
   return first_score - second_score
 
 def score(consecutive, open_ends, current_turn):
