@@ -2,6 +2,8 @@ import numpy as np
 import sys
 import os
 
+import copy
+
 COMB_LIST = [[-1, -1, 1, 1], # distance of 1
             [-1, 0, 1, 0],
             [-1, 1, 1, -1],
@@ -27,7 +29,7 @@ class Board(object):
     self.map = self.empty_map(size)
     self.size = size
     self.capture_counter = [0, 0]
-    self.color = 1
+    self.color = 1 # color of the player to move
     self.dic = {0: ".", 1: "X", 2: "O", 3: "*"}
 
   def print_map(self):
@@ -86,6 +88,10 @@ class Board(object):
     and (self.map[x - 1][y - 1] == 0))
     
   def respect_rules(self, x, y):
+    # intersection must be empty
+    if (self.map[x][y] > 0):
+      return False
+
     # test adding x,y and see if it breaks the two two rule
     self.add_point(self.color, x, y)
 
@@ -126,7 +132,7 @@ class Board(object):
       user_input = input("Your next move (type \"exit()\" to quit): $>")
     if (user_input == "exit()"):
       sys.exit()
-    return (int(user_input.split(None)[0]), int(user_input.split(None)[1]))
+    return (int(user_input.split(None)[0]) - 1, int(user_input.split(None)[1]) - 1)
     
   def is_dead(self, x ,y, c):
     m = self.map
@@ -164,7 +170,6 @@ class Board(object):
     coord = self.five_aligned()
     # if five aligned were found, it only counts if opponent cannot do anything
     if coord:
-      # print(f"reaching five aligned with self.color=={self.color}")
       return not self.can_capture_five(coord) and not self.can_reach_ten(3 - self.color)
   
   #TODO: possible to optimize x600 if check only for last move + specific color
@@ -200,5 +205,15 @@ class Board(object):
           self.add_point(0, x, y)
           if l:
             return True
-          
     return False
+
+  def child(self):
+    """Returns list of valid moves from current position for player self.color."""
+    l = []
+    for x in range(self.size):
+      for y in range(self.size):
+        if self.respect_rules(x, y):
+          new_board = copy.deepcopy(self) # ugly now, maybe there is more optimized way to do it
+          new_board.do_move(x, y)
+          l.append(new_board)
+    return l
