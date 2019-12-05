@@ -15,8 +15,10 @@ class Script(object):
       except:
         raise Exception("File not well formatted.")
 
-  def input(self):
-    return self.move.pop(0)
+  def input(self, player):
+    move = self.move.pop(0)
+    print(f"Player {player.stone}: {move[0] + 1, move[1] + 1}")
+    return move
 
   def running(self):
     return len(self.move) != 0

@@ -77,18 +77,31 @@ class Rules(object):
     return False
 
   def no_double_threes(self, board, player):
+    """Manage the No Double Free Threes Rule
+    The player must not play a move that introduces two free-three alignments
+
+    Parameters
+    ----------
+    board: Board
+      The current board
+    player: Player
+      The current player
+    """
     x, y = player.last_move
     threes = 0
-    for offset_x, offset_y in COORDS_LIST:
-      for i in range(5):
+    for offset_x, offset_y in COORDS_LIST[::2]:
+      i = 0
+      while i != 5:
         _x = x - i * offset_x
         _y = y - i * offset_y
         bound_x = _x + offset_x * 4
         bound_y = _y + offset_y * 4
         if _x < 0 or _x >= board.size or _y < 0 or _y >= board.size:
+          i += 1
           continue
         if bound_x < 0 or bound_x >= board.size \
         or bound_y < 0 or bound_y >= board.size:
+          i += 1
           continue
         free = 0
         same = 0
@@ -103,11 +116,13 @@ class Rules(object):
             same += 1
           elif board.is_empty(v, w):
             free += 1
-        # print(f"Free: {free}, Same: {same}")
         if free == 2 and same == 3:
           threes += 1
-          break
-    # print(f"Threes: {threes}")
+          if i == 0:
+            i = 4
+          else:
+            break
+        i += 1
     return threes <= 1
 
   def check_winner(self, board, players):

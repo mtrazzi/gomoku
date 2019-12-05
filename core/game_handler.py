@@ -37,8 +37,7 @@ class GameHandler(object):
       if not self.script or not self.script.running():
         move = player.input()
       else:
-        move = self.script.input()
-        print(f"{move[0] + 1, move[1] + 1}")
+        move = self.script.input(player)
 
       if len(move) == 0:
         return
@@ -51,7 +50,7 @@ class GameHandler(object):
           print(f"Player {winner.stone} won.")
           return
         self.current = (self.current + 1) % 2
-        time.sleep(0.75)
+        time.sleep(0.1)
     return
 
   def place(self, x, y, player):
@@ -74,13 +73,13 @@ class GameHandler(object):
     or not  self.board.is_empty(x, y):
       self.error = f"\033[1;31mIntersection must be empty (\'.\' or *)\033[0m"
       return False
+    player.last_move = (x, y)
 
     self.board.place(x, y, player)
     if not self.rules.no_double_threes(self.board, player):
       self.board.remove(x, y)
       self.error = f"\033[1;31mNo double free-threes allowed\033[0m"
       return False
-    player.last_move = (x, y)
     return True
 
   def __str__(self):
