@@ -37,6 +37,7 @@ class Rules(object):
     player: Player
       The current player
     """
+    dead_list = []
     x, y = player.last_move
     for offset_x, offset_y in COORDS_LIST:
       bound_x = x + offset_x * 3
@@ -56,6 +57,8 @@ class Rules(object):
           board.remove(stone1_x, stone1_y)
           board.remove(stone2_x, stone2_y)
           player.captures += 2
+          dead_list.append([(stone1_x, stone1_y), (stone2_x, stone2_y)])
+    return dead_list
 
   def aligned_win(self, board, player):
     """Manage the Aligned 5 Rule
