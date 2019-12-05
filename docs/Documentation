@@ -1,0 +1,106 @@
+Class GameHandler
+  Attributes
+  ----------
+    - board: Board
+      The board
+
+    - players: list
+      List of Players OR Bot
+
+    - rules: Rules
+      The rules to respect
+
+    - current: int
+      The current player who need to make a move
+
+  Functions
+  ---------
+  - start():
+    Main function, start the game
+
+  - place(): bool
+    Place a stone on the board with respect to the rules object
+    Return if it succeed or not
+
+  - __str__(): str
+    Return Game State (Board + Players)
+
+=============================================================================================
+
+Class Board
+  Atributes
+  ---------
+  - map: 2D array
+    The map
+
+  - size: int
+    Size of the map
+
+  Functions
+  ---------
+  - __str__(): str
+    Convert map to a string which represent it's current state
+
+  - is_empty(x, y): bool
+    Return if intersection is empty
+
+  - is_stone(x, y, player): bool
+    Return if intersection correspond to player stone
+
+  - place(x, y, player):
+    Change intersection at (x, y) with player stone
+
+=============================================================================================
+
+Class Rules
+  Attributes
+  ----------
+
+  Functions
+  ---------
+  - capture(Board, player): list
+    Return all captured stone by the player
+
+  - no_double_threes(Board, player): bool
+    Return if the move introduces two free-three alignments
+
+  - aligned_win(Board, player): bool
+    Return if player won by 5 aligned
+
+  - capture_win(Board, player): bool
+    Potentially very expensive function
+    Return if player can win by 10 captures
+
+  - check_winner(Board, players): bool
+    Run IN ORDER:
+      for player in players: if player.captures >= 10 --> WIN
+      if   5_aligned_win(Board, player[0]): if not capture_win(Board, player[1]) --> WIN
+      elif 5_aligned_win(Board, player[1]): if not capture_win(Board, player[0]) --> WIN
+
+=============================================================================================
+
+Class Player
+  Attributes
+  ----------
+  - captures: int
+    Number of stone captured
+
+  - last_move: tuple (x, y)
+    Last move
+
+  - stone: int
+    Player representation
+
+  Functions
+  ---------
+  - __str__(): str
+    Return player representation
+
+  - input(): (x, y)
+    Return given coordinates
+
+Class Bot(player) (inherited from player)
+
+=============================================================================================
+
+Class Script
