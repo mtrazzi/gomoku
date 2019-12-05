@@ -16,3 +16,17 @@ def all_equal(coord, pos, color):
     return False
   l = [pos[p[0]][p[1]] for p in coord]
   return (l[1:] == l[:-1] and l[0] == color)
+
+def is_there_stones_around(position, x, y):
+  size = position.shape[0]
+  return (((x > 0) and 
+          ((y > 0 and                position[x - 1][y - 1] > 0) or
+                                     position[x - 1][y] > 0 or
+          (y < size - 1 and          position[x - 1][y + 1]))) or
+          ((y > 0 and                position[x][y - 1] > 0) or
+                                    (position[x][y] > 0) or
+          (y < size - 1 and          position[x][y + 1])) or
+          ((x < size - 1) and
+          ((y > 0 and                position[x + 1][y - 1] > 0) or
+                                     position[x + 1][y] > 0 or
+          (y < size - 1 and position[x + 1][y + 1]))))

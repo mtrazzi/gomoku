@@ -1,4 +1,6 @@
-from core.utils import all_equal, coordinates
+from core.utils import all_equal, coordinates, is_there_stones_around
+
+import numpy as np
 
 SLOPES = [[1, 0], [-1, 1], [0, 1], [1, 1]]
 
@@ -26,9 +28,11 @@ def nb_open_ends(x, y, dx, dy, nb_consec, map):
 
 def score_for_color(position, stones_color, to_move_color):
   """Score according to consecutives and open ends, for given stones' color."""
-  tot = 0
+  tot = 0  
   for x in range(len(position)):
     for y in range(len(position)):
+      if not is_there_stones_around(position, x, y):
+        return -np.inf
       for (dx, dy) in SLOPES:
         nb_cons = nb_consecutives(x, y, dx, dy, position, stones_color)
         if nb_cons > 0:
