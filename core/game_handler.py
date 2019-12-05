@@ -2,6 +2,7 @@ import time
 import copy
 
 from core.bot import Agent
+from core.utils import is_there_stones_around
 
 class GameHandler(object):
   """Class GameHandler
@@ -60,13 +61,14 @@ class GameHandler(object):
 
       if self.can_place(*move, player):
         self.do_move(move[0], move[1], player)
+        print(f"player {player.stone} doing move {move}!!")
+        input("Press move")
         winner = self.rules.check_winner(self.board, self.players)
         if winner:
           print(self)
           print(f"Player {winner.stone} won.")
           return
         self.current = (self.current + 1) % 2
-        time.sleep(0.25)
     return
 
   def can_place(self, x, y, player):
@@ -128,6 +130,7 @@ class GameHandler(object):
     opponent = self.players[1 - self.players.index(player)]
     for (x_0, y_0) in previous_dead:
       self.board.place(x_0, y_0, opponent)
+      player.captures -= 1
 
   def child(self, player):
     """
@@ -146,9 +149,13 @@ class GameHandler(object):
     l = []
     for x in range(self.size):
       for y in range(self.size):
+        if not is_there_stones_around(self.board.board, x, y):
+          continue
         if self.can_place(x, y, player):
           new_gh = copy.deepcopy(self)
-          new_gh.do_move(x, y)
+          # copying the player and game handler not to have problems
+          new_player = copy.deepcopy(player)
+          new_gh.do_move(x, y, new_player)
           l.append(new_gh)
     return l
 

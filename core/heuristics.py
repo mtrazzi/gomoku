@@ -1,4 +1,4 @@
-from core.utils import all_equal, coordinates, is_there_stones_around
+from core.utils import all_equal, coordinates
 
 import numpy as np
 
@@ -26,25 +26,29 @@ def nb_open_ends(x, y, dx, dy, nb_consec, map):
   ends += (0 <= p2[0] < m and 0 <= p2[1] < m) and map[p2[0]][p2[1]] == 0
   return ends
 
-def score_for_color(position, stones_color, to_move_color):
+def score_for_color(position, stones_color, current_turn):
   """Score according to consecutives and open ends, for given stones' color."""
   tot = 0  
   for x in range(len(position)):
     for y in range(len(position)):
-      if not is_there_stones_around(position, x, y):
-        return -np.inf
+      if not position[x][y]:
+        continue
       for (dx, dy) in SLOPES:
         nb_cons = nb_consecutives(x, y, dx, dy, position, stones_color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
-          tot += score(nb_cons, op_ends, stones_color == to_move_color)
+          tot += score(nb_cons, op_ends, current_turn)
   return tot
 
-def simple_heuristic(position, to_move_color):
+def simple_heuristic(position, color_of_estimator):
   """Returns score for given position, for player `to_move_color`."""
-  first_score = score_for_color(position, to_move_color, to_move_color)
-  second_score = score_for_color(position, 3 - to_move_color, to_move_color)
+  first_score = score_for_color(position, color_of_estimator, False)
+  second_score = score_for_color(position, 3 - color_of_estimator, True)
   return first_score - second_score
+
+def heuristic_with_captures(position, last_moved_color):
+  """Returns a more complex score taking into account number of captures."""
+  
 
 def score(consecutive, open_ends, current_turn):
   """
@@ -75,4 +79,4 @@ def score(consecutive, open_ends, current_turn):
       return 0.5
     elif open_ends == 2:
       return 1
-  return 200000000 # if consecutive == 5
+  return 1000000000 # if consecutive == 5
