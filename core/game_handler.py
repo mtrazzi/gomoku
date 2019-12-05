@@ -58,8 +58,11 @@ class GameHandler(object):
 
       if len(move) == 0:
         return
+      
+      print("FINIIIIISHHHEHEDDD")
 
       if self.can_place(*move, player):
+        print("\n\n\n\n\nACTUALLLLY DOING A MOOOOOOVVVEEEE\n\n\n")
         self.do_move(move[0], move[1], player)
         print(f"player {player.stone} doing move {move}!!")
         input("Press move")
@@ -111,6 +114,7 @@ class GameHandler(object):
     player: Player
       Current Player
     """
+    print(f"player {player.stone} is doing move ({x},{y})")
     self.board.place(x, y, player)
     player.last_move = (x, y)
     self.move_history.append((x, y))
@@ -124,6 +128,7 @@ class GameHandler(object):
     player: Player
       Current Player
     """
+    print(f"self.move_history for player {player.stone} is: {self.move_history}")
     x, y = self.move_history.pop()
     previous_dead = self.capture_history.pop()
     self.board.remove(x, y)
@@ -144,7 +149,7 @@ class GameHandler(object):
     Return
     ------
     l: list
-      List of gamehandlers that are one legal move from current position
+      List of coordinates that are legal move from current position
     """
     l = []
     for x in range(self.size):
@@ -152,11 +157,7 @@ class GameHandler(object):
         if not is_there_stones_around(self.board.board, x, y):
           continue
         if self.can_place(x, y, player):
-          new_gh = copy.deepcopy(self)
-          # copying the player and game handler not to have problems
-          new_player = copy.deepcopy(player)
-          new_gh.do_move(x, y, new_player)
-          l.append(new_gh)
+          l.append((x,y))
     return l
 
   def __str__(self):

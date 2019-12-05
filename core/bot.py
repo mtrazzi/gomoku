@@ -69,40 +69,37 @@ class MiniMaxAgent(Agent):
   max_moves_checked: int
     Maximum number of moves checked with depth > 1
   """
-  def __init__(self, stone=1, depth=4, heuristic='simple', max_moves_checked=4):
+  def __init__(self, stone=1, depth=2, heuristic='simple', max_moves_checked=4):
     super().__init__(stone)
     self.depth = depth
     self.max_moves_checked = max_moves_checked
 
-  def input(self, game_handler):
+  def input(self, gh):
     # get the best max_moves_checked moves with depth = 1
-    size = game_handler.size
+    size = gh.size
     score_map = np.full((size, size), -np.inf)
-    player = game_handler.players[game_handler.current]
+    player = gh.players[gh.current]
     for x in range(size):
       for y in range(size):
         # only do moves that are near current stones
-        if not is_there_stones_around(game_handler.board.board, x, y):
+        if not is_there_stones_around(gh.board.board, x, y):
           score_map[x][y] = -np.inf
           continue
         # select top max_moves_checked moves with evaluation of depth one
-        if game_handler.can_place(x, y, player):
-          game_handler.do_move(x, y, player)
-          score_map[x][y] = self.minimax(game_handler, self.depth - 2, False)
-          game_handler.undo_last_move(player)
+        if gh.can_place(x, y, player):
+          score_map[x][y] = self.minimax(gh, (x,y), self.depth - 2, False)
 
     # select the best move using maximum depth = depth
     val_dic = {}
     for _ in range(self.max_moves_checked):
       x_max, y_max = np.unravel_index(np.argmax(score_map, axis=None),                                          score_map.shape)
-      if score_map[x_max][y_max] > -np.inf:
-        game_handler.do_move(x_max, y_max, player)
-        val_dic[(x_max,y_max)] = self.minimax(game_handler, self.depth - 1, False)
-        game_handler.undo_last_move(player)
+      print(f"\n\nin input----({x_max}, {y_max})\n\n")
+      val_dic[(x_max,y_max)] = self.minimax(gh, (x_max,y_max), self.depth - 1, False)
       # erase the max value to take the next max value
+      print("end")
       score_map[x_max][y_max] = -np.inf
+      print(val_dic)
     print(val_dic)
-    input("Press Enter to continue...")
     return max(val_dic, key=val_dic.get)
 
   def eval(self, node, player, heuristic='simple'):
@@ -127,16 +124,18 @@ class MiniMaxAgent(Agent):
       return simple_heuristic(position, self.stone)
     return 0
 
-  def minimax(self, node, depth, maximizing_player, alpha=-np.inf, beta=np.inf):
+  def minimax(self, node, move, depth, max_player, alpha=-np.inf, beta=np.inf):
     """The minimax function returns a heuristic value for leaf nodes (terminal nodes and nodes at the maximum search depth). Non leaf nodes inherit their value from a descendant leaf node.
 
     Parameters
     ----------
     node: GameHandler
       The current node being evaluated (a.k.a. board position)
+    move: int, int
+      The last move being played in the position to be evaluated
     depth: int
       The maximum depth of the tree for lookahead in the minimax algorithm
-    maximizing_player: bool
+    max_player: bool
       True if in recursion we're considering the position according to the original player making the move, False if we're considering the opponent.
 
     Return
@@ -144,26 +143,36 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    player = node.players[maximizing_player]
-    # print(f"=========================================================================\nminmax called with depth={depth} and player={player.stone}vv")
-    if depth == 0: #or node.is_done(): # no real need to check if game is over
-      return self.eval(node, player)
-    if maximizing_player:
-      value = -np.inf
-      for child in node.child(player):
-        value = max(value, self.minimax(child, depth - 1, False, alpha, beta))
-        alpha = max(alpha, value)
+    player = node.players[(max_player + node.current) % 2]
+    node.do_move(move[0], move[1], player)
+    if depth == 0:
+      val = self.eval(node, player)
+      # print("reached depth 0, undoing move !!!")
+      # node.undo_last_move(player)
+      return val
+    if max_player:
+      val = -np.inf
+      for move in node.child(player):
+        print(move)
+        val = max(val, self.minimax(node, move, depth - 1, False, alpha, beta))
+        print(f"undoing move {move} after val=max")
+        node.undo_last_move(player)
+        alpha = max(alpha, val)
         if alpha >= beta:
           break
-      return value
+      node.undo_last_move(player)
+      return val
     else:
-      value = np.inf
-      for child in node.child(player):
-        value = min(value, self.minimax(child, depth - 1, True, alpha, beta))
-        beta = min(beta, value)
+      val = np.inf
+      for move in node.child(player):
+        val = min(val, self.minimax(node, move, depth - 1, True, alpha, beta))
+        print(f"undoing move {move} after val=min")
+        node.undo_last_move(player)
+        beta = min(beta, val)
         if alpha >= beta:
           break
-      return value
+      node.undo_last_move(player)
+      return val
 
 AGENTS = {
   "minmax": MiniMaxAgent,
