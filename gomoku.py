@@ -7,7 +7,10 @@ from core.player import Player
 from core.board import Board
 from core.rules import Rules
 from core.script import Script
+from core.visualizer import Visualizer
 from core.bot import MiniMaxAgent, RandomAgent, AGENTS
+
+VISUALIZER_DEBUG = False
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -19,15 +22,19 @@ if __name__ == '__main__':
                       choices=["pvp", "hvsbot", "botvsbot"],
                       help="Choose how the program should be executed.")
   parser.add_argument('-b', '--board', type=str, default=None,
-                      help='Text file which represent a board state')
+                      help='Text file which represent a board state.')
   parser.add_argument('-s', "--script", type=str, default=None,
-                      help="Text file to test sequence of moves")
+                      help="Text file to test sequence of moves.")
   parser.add_argument('-a', "--algorithm",
                       nargs='+', type=str, default="minmax",
                       choices=["random", "minmax"],
-                      help="algorithm for the bot")
+                      help="Algorithm for the bot.")
 
   args = parser.parse_args()
+
+  if VISUALIZER_DEBUG:
+    Visualizer()
+    exit(-1)
 
   if args.mode in ["pvp", "script"]:
     players = [Player(1), Player(2)]

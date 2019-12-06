@@ -16,6 +16,8 @@ class GameHandler(object):
     The rules to respect
   script: Script (Default: None)
     Script to run
+  size: int (Default: 19)
+    Size of the board
 
   Attributes
   ----------
@@ -27,8 +29,6 @@ class GameHandler(object):
     List of coordinates of captured stones.
   move_history: list
     List of corrdinates of done moves
-  size: int
-    Size of the board
   """
   def __init__(self, board, players, rules, mode, script=None, size=19):
     self.board = board
@@ -36,11 +36,12 @@ class GameHandler(object):
     self.rules = rules
     self.mode = mode
     self.script = script
+    self.size = size
+
     self.current = 0
     self.error = ""
     self.capture_history = []
     self.move_history = []
-    self.size = size
 
   def start(self):
     """Main Function, run the game"""
