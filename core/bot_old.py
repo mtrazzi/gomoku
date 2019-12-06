@@ -15,7 +15,7 @@ class Agent(Player):
   Parameters
   ----------
   stone: int
-    The color of the stone of the Agent.
+    The color of the stone of the Agent
   """
   def __init__(self, stone):
     super().__init__(stone)
@@ -61,40 +61,22 @@ class MiniMaxAgent(Agent):
   Parameters
   ----------
   stone: int
-    The color of the stone of the Agent.
+    The color of the stone of the Agent
   depth: int
-    The maximum depth of the tree for lookahead in the minimax algorithm.
+    The maximum depth of the tree for lookahead in the minimax algorithm
   heuristic: string
-    The heuristic used to evaluate nodes.
-  max_top_moves: int
-    Maximum number of moves checked with depth > 1.
+    The heuristic used to evaluate nodes
+  max_moves_checked: int
+    Maximum number of moves checked with depth > 1
   """
-  def __init__(self, stone=1, depth=2, heuristic='simple', max_top_moves=4):
+  def __init__(self, stone=1, depth=2, heuristic='simple', max_moves_checked=4):
     super().__init__(stone)
     self.depth = depth
-    self.heuristic = heuristic
-    self.max_top_moves = max_top_moves
+    self.max_moves_checked = max_moves_checked
 
   def input(self, gh):
-    # find the best candidates using a depth = 1 evaluation
-    candidates = self.simple_evaluation(gh)
-    # return the best move among the candidates using minimax with full depth
-    return self.best_move(candidates)
-  
-  def simple_evaluation(self, game_handler):
-    """Returns the best `max_top_moves` moves using depth = 1 evaluation.
-
-    Parameters
-    ----------
-    game_handler: GameHandler
-      The game handler corresponding to the current position.
-
-    Return
-    ------
-    list: (int, int) list
-      The list of coordinates of the best `max_top_moves` moves.
-    """
-    gh, size = game_handler, game_handler.size
+    # get the best max_moves_checked moves with depth = 1
+    size = gh.size
     score_map = np.full((size, size), -np.inf)
     player = gh.players[gh.current]
     for x in range(size):
@@ -105,17 +87,30 @@ class MiniMaxAgent(Agent):
           continue
         # select top max_moves_checked moves with evaluation of depth one
         if gh.can_place(x, y, player):
-          score_map[x][y] = self.eval(gh.board.board)
+          score_map[x][y] = self.minimax(gh, (x,y), self.depth - 2, False)
 
-  def eval(self, node):
-    """Evaluation function used for estimating the value of a node in minimax.
+    # select the best move using maximum depth = depth
+    val_dic = {}
+    for _ in range(self.max_moves_checked):
+      x_max, y_max = np.unravel_index(np.argmax(score_map, axis=None),                                          score_map.shape)
+      print(f"\n\nin input----({x_max}, {y_max})\n\n")
+      val_dic[(x_max,y_max)] = self.minimax(gh, (x_max,y_max), self.depth - 1, False)
+      # erase the max value to take the next max value
+      print("end")
+      score_map[x_max][y_max] = -np.inf
+      print(val_dic)
+    print(val_dic)
+    return max(val_dic, key=val_dic.get)
+
+  def eval(self, node, player, heuristic='simple'):
+    """Evaluation function used for estimating the value of a node in minimax
 
     Parameters
     ----------
     node: GameHandler
-      The current node being evaluated (a.k.a. board position).
+      The current node being evaluated (a.k.a. board position)
     player: Player
-      The current player that is being evaluated.
+      The current player that is being evaluated
     heuristic: string
       The heuristic used to evaluate nodes.
 
@@ -124,8 +119,9 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    if self.heuristic == 'simple':
-      return simple_heuristic(node.board.board, self.stone)
+    position = node.board.board
+    if heuristic == 'simple':
+      return simple_heuristic(position, self.stone)
     return 0
 
   def minimax(self, node, move, depth, max_player, alpha=-np.inf, beta=np.inf):
@@ -147,7 +143,36 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    return 0
+    player = node.players[(max_player + node.current) % 2]
+    node.do_move(move[0], move[1], player)
+    if depth == 0:
+      val = self.eval(node, player)
+      # print("reached depth 0, undoing move !!!")
+      # node.undo_last_move(player)
+      return val
+    if max_player:
+      val = -np.inf
+      for move in node.child(player):
+        print(move)
+        val = max(val, self.minimax(node, move, depth - 1, False, alpha, beta))
+        print(f"undoing move {move} after val=max")
+        node.undo_last_move(player)
+        alpha = max(alpha, val)
+        if alpha >= beta:
+          break
+      node.undo_last_move(player)
+      return val
+    else:
+      val = np.inf
+      for move in node.child(player):
+        val = min(val, self.minimax(node, move, depth - 1, True, alpha, beta))
+        print(f"undoing move {move} after val=min")
+        node.undo_last_move(player)
+        beta = min(beta, val)
+        if alpha >= beta:
+          break
+      node.undo_last_move(player)
+      return val
 
 AGENTS = {
   "minmax": MiniMaxAgent,
