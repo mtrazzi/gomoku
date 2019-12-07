@@ -40,11 +40,13 @@ def score_for_color(position, stones_color, current_turn):
           tot += score(nb_cons, op_ends, current_turn)
   return tot
 
-def simple_heuristic(position, color_of_estimator):
-  """Returns score for given position, for player `to_move_color`."""
-  first_score = score_for_color(position, color_of_estimator, False)
-  second_score = score_for_color(position, 3 - color_of_estimator, True)
-  return first_score - second_score
+def simple_heuristic(position, color_of_estimator, max_player):
+  """Returns score, knowing that it's `color_of_estimator`'s turn."""
+  # if you are the maximizing player, the gain is your score when it's your turn
+  sign = 1 if max_player else -1
+  first_score = score_for_color(position, color_of_estimator, True)
+  second_score = score_for_color(position, 3 - color_of_estimator, False)
+  return (first_score - second_score) * sign
 
 def heuristic_with_captures(position, last_moved_color):
   """Returns a more complex score taking into account number of captures."""
@@ -63,7 +65,7 @@ def score(consecutive, open_ends, current_turn):
     if open_ends == 1:
       return 100000000 if current_turn else 50
     elif open_ends == 2:
-      return 100000000 if current_turn else 500000
+      return 1000000000 if current_turn else 500000
   if consecutive == 3:
     if open_ends == 1:
       return 100000000 if current_turn else 50

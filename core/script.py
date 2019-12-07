@@ -17,7 +17,6 @@ class Script(object):
 
   def input(self, player):
     move = self.move.pop(0)
-    print(f"Player {player.stone}: {move[0] + 1, move[1] + 1}")
     return move
 
   def running(self):

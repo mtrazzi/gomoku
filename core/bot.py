@@ -69,20 +69,24 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with depth > 1.
   """
-  def __init__(self, stone=1, depth=2, heuristic='simple', max_top_moves=4):
+  def __init__(self, stone=1, depth=2, heuristic='simple', max_top_moves=5):
     super().__init__(stone)
     self.depth = depth
     self.heuristic = heuristic
     self.max_top_moves = max_top_moves
 
   def input(self, gh):
-    # find the best candidates using a depth = 1 evaluation
-    candidates = self.simple_evaluation(gh)
-    # return the best move among the candidates using minimax with full depth
-    return self.best_move(candidates)
+    # Estimate moves using a depth = 1 evaluation
+    score_map = self.simple_evaluation(gh)
+    # Find the list of best moves using this score map
+    candidates = self.best_moves(score_map)
+    # estimate the value of those candidates using minimax at full depth
+    values = [self.minimax(gh, coord, self.depth, True) for coord in candidates]
+    # return the best candidate
+    return candidates[np.argmax(values)]
   
   def simple_evaluation(self, game_handler):
-    """Returns the best `max_top_moves` moves using depth = 1 evaluation.
+    """Returns a score map for possible moves using a depth = 1 evaluation.
 
     Parameters
     ----------
@@ -91,12 +95,13 @@ class MiniMaxAgent(Agent):
 
     Return
     ------
-    list: (int, int) list
-      The list of coordinates of the best `max_top_moves` moves.
+    score_map: numpy.ndarray
+      For each coordinate, its depth = 1 evaluation.
     """
     gh, size = game_handler, game_handler.size
     score_map = np.full((size, size), -np.inf)
     player = gh.players[gh.current]
+    # opponent = gh.players[1 - gh.current]
     for x in range(size):
       for y in range(size):
         # only do moves that are near current stones
@@ -105,19 +110,38 @@ class MiniMaxAgent(Agent):
           continue
         # select top max_moves_checked moves with evaluation of depth one
         if gh.can_place(x, y, player):
-          score_map[x][y] = self.eval(gh.board.board)
+          score_map[x][y] = self.minimax(gh, (x,y), 0, False)
+    return score_map
+  
+  def best_moves(self, score_map):
+    """Returns the top `max_top_moves` moves according to the score map.
 
-  def eval(self, node):
+    Parameters
+    ----------
+    score_map: numpy.ndarray
+      For each coordinate, its depth = 1 evaluation.
+
+    Return
+    ------
+    top_move_list: (int, int) list
+      The list of coordinates of the best `max_top_moves` moves.
+    """
+    top_move_list = []
+    for _ in range(self.max_top_moves):
+      x_max, y_max = np.unravel_index(np.argmax(score_map, axis=None),                                          score_map.shape)
+      top_move_list.append((x_max, y_max))
+      score_map[x_max][y_max] = -np.inf
+    return top_move_list
+
+  def eval(self, position, color_to_move, max_player):
     """Evaluation function used for estimating the value of a node in minimax.
 
     Parameters
     ----------
-    node: GameHandler
-      The current node being evaluated (a.k.a. board position).
-    player: Player
-      The current player that is being evaluated.
-    heuristic: string
-      The heuristic used to evaluate nodes.
+    node: numpy.ndarray
+      The current board position being evaluated.
+    color_to_move: int
+      Stone color of the player that will play next (1 for black, 2 for white).
 
     Return
     ------
@@ -125,7 +149,7 @@ class MiniMaxAgent(Agent):
       The estimated value of the current node (position) being evaluated.
     """
     if self.heuristic == 'simple':
-      return simple_heuristic(node.board.board, self.stone)
+      return simple_heuristic(position, color_to_move, max_player)
     return 0
 
   def minimax(self, node, move, depth, max_player, alpha=-np.inf, beta=np.inf):
@@ -147,9 +171,32 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    return 0
+    # current player depends on the index of max. player and if we're maximizing
+    player = node.players[(node.current + (1 - max_player)) % 2]
+    opponent = node.players[(node.current + max_player) % 2]
+    # start your estimation of the move by doing the move
+    node.do_move(move[0], move[1], player)
+    if depth == 0:
+      val = self.eval(node.board.board, opponent.stone, max_player)
+    else:
+      # using a sign to avoid two conditions in minimax
+      sign = -1 if max_player else 1
+      val = sign * np.inf
+      bounds = [alpha, beta]
+      for new_move in node.child(player):
+        val = sign * min(sign * val,
+                        sign * self.minimax(node, new_move, depth - 1, 
+                                            not max_player, bounds[0], bounds[1]))
+        if sign * (bounds[max_player] - val) >= 0:
+          # input(f"breaking with val = {bounds[0]}<={val}<={bounds[1]} (max_player is {max_player})")
+          break
+        # input("not breaking")
+        bounds[1 - max_player] = sign * min(sign * bounds[1 - max_player], 
+                                            sign * val)
+    node.undo_last_move(player)
+    return val
 
 AGENTS = {
-  "minmax": MiniMaxAgent,
+  "minimax": MiniMaxAgent,
   "random": RandomAgent
 }

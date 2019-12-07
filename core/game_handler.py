@@ -46,6 +46,7 @@ class GameHandler(object):
   def start(self):
     """Main Function, run the game"""
     while 1:
+      input("step by step")
       player = self.players[self.current]
       print(self)
 
@@ -59,13 +60,8 @@ class GameHandler(object):
       if len(move) == 0:
         return
       
-      print("FINIIIIISHHHEHEDDD")
-
       if self.can_place(*move, player):
-        print("\n\n\n\n\nACTUALLLLY DOING A MOOOOOOVVVEEEE\n\n\n")
         self.do_move(move[0], move[1], player)
-        print(f"player {player.stone} doing move {move}!!")
-        input("Press move")
         winner = self.rules.check_winner(self.board, self.players)
         if winner:
           print(self)
@@ -114,7 +110,6 @@ class GameHandler(object):
     player: Player
       Current Player
     """
-    print(f"player {player.stone} is doing move ({x},{y})")
     self.board.place(x, y, player)
     player.last_move = (x, y)
     self.move_history.append((x, y))
@@ -128,7 +123,6 @@ class GameHandler(object):
     player: Player
       Current Player
     """
-    print(f"self.move_history for player {player.stone} is: {self.move_history}")
     x, y = self.move_history.pop()
     previous_dead = self.capture_history.pop()
     self.board.remove(x, y)
