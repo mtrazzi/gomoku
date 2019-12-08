@@ -27,9 +27,9 @@ class Player(object):
         return ()
       try:
         x, y = [int(i) for i in move]
-      except:
-        print("\033[1;31mMove badly formated: "
-              "must type \"x y\" with x and y integers\n"
+      except Exception:
+        print("\033[1;31mMove badly formatted: \n",
+              "must type \"x y\" with x and y integers\n",
               "Example : \"2 3\"\033[0m")
         continue
       return (x - 1, y - 1)

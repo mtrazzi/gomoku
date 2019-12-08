@@ -2,12 +2,17 @@
 
 import argparse
 
-from core.game_handler import GameHandler
-from core.player import Player
-from core.board import Board
-from core.rules import Rules
-from core.script import Script
-from core.bot import MiniMaxAgent, RandomAgent, AGENTS
+from gomoku.game_handler import GameHandler
+from gomoku.player import Player
+from gomoku.board import Board
+from gomoku.rules import Rules
+from gomoku.script import Script
+from gomoku.bot import MiniMaxAgent, RandomAgent
+
+AGENTS = {
+  "minimax": MiniMaxAgent,
+  "random": RandomAgent
+}
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

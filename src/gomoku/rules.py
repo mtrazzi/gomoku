@@ -62,7 +62,7 @@ class Rules(object):
 
   def aligned_win(self, board, player):
     """Manage the Aligned 5 Rule
-    The player win if he alignes 5 stone of his color
+    The player wins if he aligns 5 stone of his color
 
     Parameters
     ----------

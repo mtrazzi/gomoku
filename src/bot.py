@@ -1,13 +1,10 @@
 from abc import abstractmethod
 import numpy as np
-import os
-import time
-import copy
 
-from core.board import Board
-from core.heuristics import simple_heuristic
-from core.player import Player
-from core.utils import is_there_stones_around
+from gomoku.heuristics import simple_heuristic
+from gomoku.player import Player
+from gomoku.utils import is_there_stones_around
+
 
 class Agent(Player):
   """Class Agent. Abstract class for our gomoku bot.
@@ -35,6 +32,7 @@ class Agent(Player):
       The best move according to Agent.
     """
 
+
 class RandomAgent(Agent):
   """Class RandomAgent. Plays valid random moves.
 
@@ -55,8 +53,10 @@ class RandomAgent(Agent):
         break
     return x, y
 
+
 class MiniMaxAgent(Agent):
-  """Class MinMaxAgent. Apply the MiniMax algorithm (cf. https://en.wikipedia.org/wiki/Minimax#Pseudocode.)
+  """Class MinMaxAgent. Apply the MiniMax algorithm (cf.
+  https://en.wikipedia.org/wiki/Minimax#Pseudocode.)
 
   Parameters
   ----------
@@ -84,7 +84,7 @@ class MiniMaxAgent(Agent):
     values = [self.minimax(gh, coord, self.depth, True) for coord in candidates]
     # return the best candidate
     return candidates[np.argmax(values)]
-  
+
   def simple_evaluation(self, game_handler):
     """Returns a score map for possible moves using a depth = 1 evaluation.
 
@@ -110,9 +110,9 @@ class MiniMaxAgent(Agent):
           continue
         # select top max_moves_checked moves with evaluation of depth one
         if gh.can_place(x, y, player):
-          score_map[x][y] = self.minimax(gh, (x,y), 0, False)
+          score_map[x][y] = self.minimax(gh, (x, y), 0, False)
     return score_map
-  
+
   def best_moves(self, score_map):
     """Returns the top `max_top_moves` moves according to the score map.
 
@@ -128,7 +128,8 @@ class MiniMaxAgent(Agent):
     """
     top_move_list = []
     for _ in range(self.max_top_moves):
-      x_max, y_max = np.unravel_index(np.argmax(score_map, axis=None),                                          score_map.shape)
+      x_max, y_max = np.unravel_index(np.argmax(score_map, axis=None),
+                                      score_map.shape)
       top_move_list.append((x_max, y_max))
       score_map[x_max][y_max] = -np.inf
     return top_move_list
@@ -153,7 +154,9 @@ class MiniMaxAgent(Agent):
     return 0
 
   def minimax(self, node, move, depth, max_player, alpha=-np.inf, beta=np.inf):
-    """The minimax function returns a heuristic value for leaf nodes (terminal nodes and nodes at the maximum search depth). Non leaf nodes inherit their value from a descendant leaf node.
+    """The minimax function returns a heuristic value for leaf nodes (terminal
+    nodes and nodes at the maximum search depth). Non leaf nodes inherit their
+    value from a descendant leaf node.
 
     Parameters
     ----------
@@ -164,7 +167,8 @@ class MiniMaxAgent(Agent):
     depth: int
       The maximum depth of the tree for lookahead in the minimax algorithm
     max_player: bool
-      True if in recursion we're considering the position according to the original player making the move, False if we're considering the opponent.
+      True if in recursion we're considering the position according to the
+      original player making the move, False if we're considering the opponent.
 
     Return
     ------
@@ -182,21 +186,14 @@ class MiniMaxAgent(Agent):
       # using a sign to avoid two conditions in minimax
       sign = -1 if max_player else 1
       val = sign * np.inf
-      bounds = [alpha, beta]
+      lim = [alpha, beta]
       for new_move in node.child(player):
         val = sign * min(sign * val,
-                        sign * self.minimax(node, new_move, depth - 1, 
-                                            not max_player, bounds[0], bounds[1]))
-        if sign * (bounds[max_player] - val) >= 0:
-          # input(f"breaking with val = {bounds[0]}<={val}<={bounds[1]} (max_player is {max_player})")
+                         sign * self.minimax(node, new_move, depth - 1,
+                                             1 - max_player, lim[0], lim[1]))
+        if sign * (lim[max_player] - val) >= 0:
           break
-        # input("not breaking")
-        bounds[1 - max_player] = sign * min(sign * bounds[1 - max_player], 
-                                            sign * val)
+        lim[1 - max_player] = sign * min(sign * lim[1 - max_player],
+                                         sign * val)
     node.undo_last_move(player)
     return val
-
-AGENTS = {
-  "minimax": MiniMaxAgent,
-  "random": RandomAgent
-}

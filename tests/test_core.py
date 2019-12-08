@@ -1,5 +1,5 @@
-from core.clean.board import Board
-from core.clean.script import Script
+from gomoku.board import Board
+from gomoku.script import Script
 
 def test_print_board():
   board = Board()

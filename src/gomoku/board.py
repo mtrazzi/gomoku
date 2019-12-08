@@ -1,16 +1,16 @@
 import numpy as np
 
+
 class Board(object):
   """Class Board
 
-  Parameters
-  ----------
-  filename: str (Default: None)
-    If filename is specify, load board state
-  size: int (Default: 19)
-    Size of the map
-  cmap: dict (Default: {0: '.', 1: 'X', 2: 'O'})
-    Map board value with symbol
+  Args:
+    filename: str (Default: None)
+      If filename is specify, load board state
+    size: int (Default: 19)
+      Size of the map
+    cmap: dict (Default: {0: '.', 1: 'X', 2: 'O'})
+      Map board value with symbol
 
   Attributes
   ----------
@@ -29,7 +29,6 @@ class Board(object):
     for i in range(self.size):
       representation += f"{(i+1):2} "
     representation += "\n"
-
     for i in range(self.size):
       representation += f"{(i+1):2} "
       for j in range(self.size):
@@ -39,7 +38,6 @@ class Board(object):
         else:
           representation += f"{self.cmap[x]:>2} "
       representation += "\n"
-
     return representation
 
   def is_empty(self, x, y):
@@ -70,6 +68,7 @@ class Board(object):
         for i in range(self.size):
           for j in range(self.size):
             self.board[i][j] = inv_cmap[board[i][j]]
-    except:
+    except Exception as e:
       print("Error encountered while parsing board, starting with empty board.")
+      print(e.message)
       self.board = np.zeros((self.size, self.size))

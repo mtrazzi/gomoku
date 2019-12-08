@@ -1,8 +1,6 @@
-import time
-import copy
+from gomoku.bot import Agent
+from gomoku.utils import is_there_stones_around
 
-from core.bot import Agent
-from core.utils import is_there_stones_around
 
 class GameHandler(object):
   """Class GameHandler
@@ -59,7 +57,7 @@ class GameHandler(object):
 
       if len(move) == 0:
         return
-      
+
       if self.can_place(*move, player):
         self.do_move(move[0], move[1], player)
         winner = self.rules.check_winner(self.board, self.players)
@@ -85,9 +83,8 @@ class GameHandler(object):
     succeed: bool
       True if we can place the stone else False
     """
-    if x < 0                or y < 0                \
-    or x >= self.board.size or y >= self.board.size \
-    or not  self.board.is_empty(x, y):
+    if (x < 0 or x >= self.board.size or y < 0 or y >= self.board.size or not
+        self.board.is_empty(x, y)):
       self.error = f"\033[1;31mIntersection must be empty (\'.\' or *)\033[0m"
       return False
     player.last_move = (x, y)
@@ -133,7 +130,8 @@ class GameHandler(object):
 
   def child(self, player):
     """
-    List all the possible gamehandlers that could result from the current board with current player being player
+    List all the possible gamehandlers that could result from the current board
+    with current player being player
 
     Parameters
     ----------
@@ -142,20 +140,20 @@ class GameHandler(object):
 
     Return
     ------
-    l: list
+    children: list
       List of coordinates that are legal move from current position
     """
-    l = []
+    children = []
     for x in range(self.size):
       for y in range(self.size):
         if not is_there_stones_around(self.board.board, x, y):
           continue
         if self.can_place(x, y, player):
-          l.append((x,y))
-    return l
+          children.append((x, y))
+    return children
 
   def __str__(self):
-    representation =  f"\033[2J\033[H{self.board}"
+    representation = f"\033[2J\033[H{self.board}"
     representation += f"X: {self.players[0].captures} stone captured\n"
     representation += f"O: {self.players[1].captures} stone captured"
     if len(self.error) != 0:
