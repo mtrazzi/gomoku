@@ -1,9 +1,10 @@
 from abc import abstractmethod
+
 import numpy as np
 
-from gomoku.heuristics import simple_heuristic
+from gomoku.heuristics import capture_heuristic, simple_heuristic
 from gomoku.player import Player
-from gomoku.utils import is_there_stones_around
+from gomoku.utils import is_there_stones_around, opposite
 
 
 class Agent(Player):
@@ -18,7 +19,7 @@ class Agent(Player):
     super().__init__(stone)
 
   @abstractmethod
-  def input(self, game_handler) -> (int, int):
+  def find_move(self, game_handler) -> (int, int):
     """Returns best move (x, y) given current board position.
 
     Parameters
@@ -44,7 +45,7 @@ class RandomAgent(Agent):
   def __init__(self, stone):
     super().__init__(stone)
 
-  def input(self, game_handler):
+  def find_move(self, game_handler):
     player = game_handler.players[game_handler.current]
     while True:
       size = game_handler.size
@@ -69,13 +70,15 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with depth > 1.
   """
-  def __init__(self, stone=1, depth=2, heuristic='simple', max_top_moves=5):
+  def __init__(self, stone=1, depth=3, max_top_moves=5):
     super().__init__(stone)
     self.depth = depth
-    self.heuristic = heuristic
     self.max_top_moves = max_top_moves
 
-  def input(self, gh):
+  def find_move(self, gh):
+    # If empty, start with the center
+    if np.sum(gh.board.board) == 0:
+      return gh.size // 2, gh.size // 2
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
     # Find the list of best moves using this score map
@@ -134,7 +137,7 @@ class MiniMaxAgent(Agent):
       score_map[x_max][y_max] = -np.inf
     return top_move_list
 
-  def eval(self, position, color_to_move, max_player):
+  def evaluation(self, position, color_to_move, my_turn, player, opponent):
     """Evaluation function used for estimating the value of a node in minimax.
 
     Parameters
@@ -149,9 +152,13 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    if self.heuristic == 'simple':
-      return simple_heuristic(position, color_to_move, max_player)
-    return 0
+    return (simple_heuristic(position, color_to_move, my_turn) +
+            capture_heuristic(player, opponent))
+
+  def return_players(self, node, max_player):
+    # current player depends on if we're maximizing
+    move_color = self.stone if max_player else opposite(self.stone)
+    return node.players[move_color - 1], node.players[opposite(move_color) - 1]
 
   def minimax(self, node, move, depth, max_player, alpha=-np.inf, beta=np.inf):
     """The minimax function returns a heuristic value for leaf nodes (terminal
@@ -175,13 +182,13 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    # current player depends on the index of max. player and if we're maximizing
-    player = node.players[(node.current + (1 - max_player)) % 2]
-    opponent = node.players[(node.current + max_player) % 2]
+    player, opponent = self.return_players(node, max_player)
     # start your estimation of the move by doing the move
     node.do_move(move[0], move[1], player)
     if depth == 0:
-      val = self.eval(node.board.board, opponent.stone, max_player)
+      # after putting my stone, let's see what's the situation when not my turn
+      val = self.evaluation(node.board.board, player.stone, 1 - max_player,
+                            player, opponent)
     else:
       # using a sign to avoid two conditions in minimax
       sign = -1 if max_player else 1

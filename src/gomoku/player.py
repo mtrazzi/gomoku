@@ -19,7 +19,7 @@ class Player(object):
     self.captures = 0
     return
 
-  def input(self):
+  def get_move(self):
     while 1:
       raw = input(f"Player {self.stone} next move: $> ")
       move = raw.strip().split()

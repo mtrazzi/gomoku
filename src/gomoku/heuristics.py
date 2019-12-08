@@ -1,4 +1,6 @@
-from gomoku.utils import all_equal, coordinates
+import numpy as np
+
+from gomoku.utils import all_equal, coordinates, opposite
 
 SLOPES = [[1, 0], [-1, 1], [0, 1], [1, 1]]
 
@@ -6,6 +8,11 @@ SLOPES = [[1, 0], [-1, 1], [0, 1], [1, 1]]
 def nb_consecutives(x, y, dx, dy, m, color):
   if m[x][y] != color:
     return 0
+  # don't start counting if you're not the first stone of a series
+  if ((0 <= x - dx < len(m)) and (0 <= y - dy < len(m))
+      and m[x - dx][y - dy] == color):
+    return 0
+  # check what is the biggest nb_coordinates that you can fit in direction dx/dy
   nb_consec = 1
   while True:
     nb_consec += 1
@@ -14,20 +21,20 @@ def nb_consecutives(x, y, dx, dy, m, color):
       return nb_consec - 1
 
 
-def nb_open_ends(x, y, dx, dy, nb_consec, map):
-  """Check if all the given coordinates are equal to color in map."""
-  m = len(map)
+def nb_open_ends(x, y, dx, dy, nb_consec, position):
+  """Check if the extreme ends are empty or not."""
+  m = len(position)
   coord = coordinates(x, y, dx, dy, nb_consec)
   # compute coordinates of open ends candidates before and after given points
   p1 = [coord[0][0] - dx, coord[0][1] - dy]
   p2 = [coord[-1][0] + dx, coord[-1][1] + dy]
   ends = 0
-  ends += (0 <= p1[0] < m and 0 <= p1[1] < m) and map[p1[0]][p1[1]] == 0
-  ends += (0 <= p2[0] < m and 0 <= p2[1] < m) and map[p2[0]][p2[1]] == 0
+  ends += (0 <= p1[0] < m and 0 <= p1[1] < m) and position[p1[0]][p1[1]] == 0
+  ends += (0 <= p2[0] < m and 0 <= p2[1] < m) and position[p2[0]][p2[1]] == 0
   return ends
 
 
-def score_for_color(position, stones_color, current_turn):
+def score_for_color(position, stones_color, my_turn):
   """Score according to consecutives and open ends, for given stones' color."""
   tot = 0
   for x in range(len(position)):
@@ -38,20 +45,28 @@ def score_for_color(position, stones_color, current_turn):
         nb_cons = nb_consecutives(x, y, dx, dy, position, stones_color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
-          tot += score(nb_cons, op_ends, current_turn)
+          tot += score(nb_cons, op_ends, my_turn)
   return tot
 
 
-def simple_heuristic(position, color_of_estimator, max_player):
-  """Returns score, knowing that it's `color_of_estimator`'s turn."""
-  # if you are the maximizing player, the gain is your score when it's your turn
-  sign = 1 if max_player else -1
-  first_score = score_for_color(position, color_of_estimator, True)
-  second_score = score_for_color(position, 3 - color_of_estimator, False)
-  return (first_score - second_score) * sign
+def simple_heuristic(position, color, my_turn):
+  """Returns score, knowing that it's `color`'s turn or not."""
+  first_score = score_for_color(position, color, my_turn)
+  second_score = score_for_color(position, opposite(color), not my_turn)
+  return (first_score - second_score)
 
 
-def score(consecutive, open_ends, current_turn):
+def capture_heuristic(player, opponent):
+  """Takes into account the capture rules, and make capture more likely."""
+  if player.captures == 10:
+    return np.inf
+  diff = player.captures - opponent.captures
+  # 1e9 because capturing more important than leaving cons=2 open_ends=1
+  # but less than winning with a free four
+  return diff * 1e12
+
+
+def score(consecutive, open_ends, my_turn):
   """
   Returns the score corresponding to a sequence of `consecutive` consecutive
   stones with `open_ends` open ends. Will give higher score if the color of
@@ -59,20 +74,21 @@ def score(consecutive, open_ends, current_turn):
   turn.
   """
   if consecutive == 5:
-    return 1e10
+    return 1e12
   elif consecutive == 4:
     if open_ends == 1:
-      return 1e10 if current_turn else 5e1
+      return 1e10 if my_turn else 5e1
     elif open_ends == 2:
-      return 1e10 if current_turn else 1e10
+      return 1e10 if my_turn else 1e10
   elif consecutive == 3:
     if open_ends == 1:
-      return 1e4 if current_turn else 5e1
-    elif open_ends == 2:
-      return 1e4 if current_turn else 5e5
+      return 1e4 if my_turn else 5e1
+    elif open_ends == 2:  # later, deal with spaces outside open ends
+      return 1e5 if my_turn else 5e4
   elif consecutive == 2:
     if open_ends == 1:
-      return 2
+      # having your stones captured is really bad!
+      return -1e4 if my_turn else -1e8
     elif open_ends == 2:
       return 5
   elif consecutive == 1:
@@ -81,4 +97,4 @@ def score(consecutive, open_ends, current_turn):
     elif open_ends == 2:
       return 1
   if (open_ends == 0):
-    return -1e8 if consecutive == 2 else 0
+    return 0

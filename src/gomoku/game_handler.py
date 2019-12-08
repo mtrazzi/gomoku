@@ -48,11 +48,11 @@ class GameHandler(object):
       print(self)
 
       if isinstance(player, Agent):
-        move = player.input(self)
+        move = player.find_move(self)
       elif not self.script or not self.script.running():
-        move = player.input()
+        move = player.get_move()
       else:
-        move = self.script.input(player)
+        move = self.script.get_move(player)
 
       if len(move) == 0:
         return

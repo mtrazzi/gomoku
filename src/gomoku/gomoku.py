@@ -2,16 +2,16 @@
 
 import argparse
 
+from gomoku.board import Board
+from gomoku.bot import MiniMaxAgent, RandomAgent
 from gomoku.game_handler import GameHandler
 from gomoku.player import Player
-from gomoku.board import Board
 from gomoku.rules import Rules
 from gomoku.script import Script
-from gomoku.bot import MiniMaxAgent, RandomAgent
 
 AGENTS = {
   "minimax": MiniMaxAgent,
-  "random": RandomAgent
+  "random": RandomAgent,
 }
 
 if __name__ == '__main__':
@@ -37,17 +37,17 @@ if __name__ == '__main__':
   if args.mode in ["pvp", "script"]:
     players = [Player(1), Player(2)]
   elif args.mode == "hvsbot":
-    players = [Player(1), AGENTS[args.algorithm[0]](2)]
+    players = [Player(1), AGENTS[args.algorithm](2)]
   elif args.mode == "botvsbot":
     players = [AGENTS[args.algorithm[0]](1), AGENTS[args.algorithm[1]](2)]
   elif args.mode == "botvsh":
-    players = [AGENTS[args.algorithm[0]](1), Player(2)]
+    players = [AGENTS[args.algorithm](1), Player(2)]
 
   script = Script(args.script) if args.script else None
 
-  game = GameHandler( board=Board(filename=args.board),
-                      players=players,
-                      rules=Rules(),
-                      mode=args.mode,
-                      script=script)
+  game = GameHandler(board=Board(filename=args.board),
+                     players=players,
+                     rules=Rules(),
+                     mode=args.mode,
+                     script=script)
   game.start()

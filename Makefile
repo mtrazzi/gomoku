@@ -9,7 +9,7 @@ lint:
 	@sh ci/lint.sh
 
 test:
-	@python3 -m pytest
+	@python3 -m pytest -s -vv tests
 
 clean:
 	@python3 setup.py clean

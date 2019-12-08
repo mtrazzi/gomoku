@@ -68,7 +68,6 @@ class Board(object):
         for i in range(self.size):
           for j in range(self.size):
             self.board[i][j] = inv_cmap[board[i][j]]
-    except Exception as e:
+    except Exception:
       print("Error encountered while parsing board, starting with empty board.")
-      print(e.message)
       self.board = np.zeros((self.size, self.size))
