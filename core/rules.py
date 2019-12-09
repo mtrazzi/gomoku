@@ -160,13 +160,13 @@ class Rules(object):
         return player
 
     if self.aligned_win(board, players[0]):
-      if not self.check_captures(board, players[1]) and players[1] < 8:
+      if not self.check_captures(board, players[1]) and players[1].captures < 8:
         return players[0]
       else:
         return players[1]
 
     if self.aligned_win(board, players[1]):
-      if not self.check_captures(board, players[0]) and players[0] < 8:
+      if not self.check_captures(board, players[0]) and players[0].captures < 8:
         return players[1]
       else:
         return players[0]

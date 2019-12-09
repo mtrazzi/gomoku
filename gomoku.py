@@ -10,31 +10,27 @@ from core.script import Script
 from core.visualizer import Visualizer
 from core.bot import MiniMaxAgent, RandomAgent, AGENTS
 
-VISUALIZER_DEBUG = False
-
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
 
+  parser.add_argument('-a', "--algorithm",
+                      nargs='+', type=str, default="minmax",
+                      choices=["random", "minmax"],
+                      help="Algorithm for the bot.")
+  parser.add_argument('-b', '--board', type=str, default=None,
+                      help='Text file which represent a board state.')
+  parser.add_argument('-d', "--debug", action='store_true', default=False,
+                      help="Enable terminal mode.")
   parser.add_argument('-H', "--heuristic", type=str, default='?',
                       help="Heuristic function.")
   parser.add_argument('-m', "--mode",
                       type=str, default="pvp",
                       choices=["pvp", "hvsbot", "botvsbot"],
                       help="Choose how the program should be executed.")
-  parser.add_argument('-b', '--board', type=str, default=None,
-                      help='Text file which represent a board state.')
   parser.add_argument('-s', "--script", type=str, default=None,
                       help="Text file to test sequence of moves.")
-  parser.add_argument('-a', "--algorithm",
-                      nargs='+', type=str, default="minmax",
-                      choices=["random", "minmax"],
-                      help="Algorithm for the bot.")
 
   args = parser.parse_args()
-
-  if VISUALIZER_DEBUG:
-    Visualizer()
-    exit(-1)
 
   if args.mode in ["pvp", "script"]:
     players = [Player(1), Player(2)]
@@ -50,4 +46,8 @@ if __name__ == '__main__':
                       rules=Rules(),
                       mode=args.mode,
                       script=script)
-  game.start()
+
+  if args.debug:
+    game.start()
+  else:
+    Visualizer(game)
