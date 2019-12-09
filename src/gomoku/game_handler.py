@@ -1,6 +1,7 @@
 from gomoku.bot import Agent
 from gomoku.utils import is_there_stones_around
 
+import time
 
 class GameHandler(object):
   """Class GameHandler
@@ -40,6 +41,7 @@ class GameHandler(object):
     self.capture_history = []
     self.move_history = []
     self.size = size
+    self.begin = -1
 
   def start(self):
     """Main Function, run the game"""
@@ -47,6 +49,7 @@ class GameHandler(object):
       player = self.players[self.current]
       print(self)
 
+      self.begin = time.time()
       if isinstance(player, Agent):
         move = player.find_move(self)
       elif not self.script or not self.script.running():
@@ -154,8 +157,10 @@ class GameHandler(object):
   def __str__(self):
     representation = f"\033[2J\033[H{self.board}"
     representation += f"X: {self.players[0].captures} stone captured\n"
-    representation += f"O: {self.players[1].captures} stone captured"
-    if len(self.error) != 0:
-      representation += f"\n{self.error}"
+    representation += f"O: {self.players[1].captures} stone captured\n"
+    if self.begin > 0:
+      representation += f"\nMove took {time.time() - self.begin}s, so fast!"
+    # if len(self.error) != 0:
+    #   representation += f"{self.error}"
     self.error = ""
     return representation

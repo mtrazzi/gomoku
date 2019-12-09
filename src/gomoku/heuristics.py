@@ -50,20 +50,49 @@ def score_for_color(position, stones_color, my_turn):
 
 
 def simple_heuristic(position, color, my_turn):
-  """Returns score, knowing that it's `color`'s turn or not."""
+  """Evaluation function used for estimating the value of a node in minimax.
+
+  Parameters
+  ----------
+  position: numpy.ndarray
+    The current board position being evaluated.
+  color: int
+    The color of of the stones for the first score.
+  my_turn: bool
+    Is it my turn or not? Something to take into account when evaluating board.
+
+  Return
+  ------
+  score: int
+    How the situation looks like taking into account the two players.
+  """
   first_score = score_for_color(position, color, my_turn)
   second_score = score_for_color(position, opposite(color), not my_turn)
   return (first_score - second_score)
 
 
-def capture_heuristic(player, opponent):
-  """Takes into account the capture rules, and make capture more likely."""
+def capture_heuristic(player, opponent, our_stones):
+  """Takes into account the capture rules, and make capture more likely.
+
+  Parameters
+  ----------
+  player: Player
+    The player that played the last stone.
+  opponent: Player
+    The player supposed to play now.
+  our_stones: bool
+    Are we evaluating the situation as if player's stones are our stones?
+
+  Return
+  ------
+  score: int
+    How the situation looks like taking into account the two players's captures.
+  """
   if player.captures == 10:
     return np.inf
+  sign = 1 if our_stones else -1
   diff = player.captures - opponent.captures
-  # 1e9 because capturing more important than leaving cons=2 open_ends=1
-  # but less than winning with a free four
-  return diff * 1e12
+  return sign * diff * 1e8
 
 
 def score(consecutive, open_ends, my_turn):
@@ -73,13 +102,13 @@ def score(consecutive, open_ends, my_turn):
   the stones are the same as the color of the player playing for the current
   turn.
   """
-  if consecutive == 5:
-    return 1e12
+  if consecutive >= 5:
+    return np.inf
   elif consecutive == 4:
     if open_ends == 1:
       return 1e10 if my_turn else 5e1
     elif open_ends == 2:
-      return 1e10 if my_turn else 1e10
+      return 1e12
   elif consecutive == 3:
     if open_ends == 1:
       return 1e4 if my_turn else 5e1
