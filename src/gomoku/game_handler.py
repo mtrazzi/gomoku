@@ -1,5 +1,7 @@
-from gomoku.bot import Agent
+import time
+
 from gomoku.utils import is_there_stones_around
+from gomoku.bot import Agent, MiniMaxAgent
 
 
 class GameHandler(object):
@@ -15,6 +17,8 @@ class GameHandler(object):
     The rules to respect
   script: Script (Default: None)
     Script to run
+  size: int (Default: 19)
+    Size of the board
 
   Attributes
   ----------
@@ -26,8 +30,10 @@ class GameHandler(object):
     List of coordinates of captured stones.
   move_history: list
     List of corrdinates of done moves
-  size: int
-    Size of the board
+  turn: int
+    Current In-game turn
+  winner: Player
+    Player who won
   """
   def __init__(self, board, players, rules, mode, script=None, size=19):
     self.board = board
@@ -35,37 +41,74 @@ class GameHandler(object):
     self.rules = rules
     self.mode = mode
     self.script = script
+    self.size = size
+
     self.current = 0
     self.error = ""
     self.capture_history = []
     self.move_history = []
-    self.size = size
+    self.turn = 1
+    self.winner = None
+    self.helpAgent = MiniMaxAgent()
+
+  def restart(self):
+    self.board.restart()
+    self.players[0].captures = 0
+    self.players[1].captures = 0
+    if self.script:
+      self.script.restart()
+
+    self.current = 0
+    self.error = ""
+    self.capture_history = []
+    self.move_history = []
+    self.turn = 1
+    self.winner = None
+    return self
 
   def start(self):
     """Main Function, run the game"""
+    print(self)
     while 1:
       player = self.players[self.current]
-      print(self)
 
       if isinstance(player, Agent):
         move = player.find_move(self)
       elif not self.script or not self.script.running():
         move = player.get_move()
       else:
-        move = self.script.get_move(player)
-
+        move = self.script.get_move()
+        print(f"Player {player.stone}: {move[0] + 1, move[1] + 1}")
       if len(move) == 0:
         return
 
-      if self.can_place(*move, player):
-        self.do_move(move[0], move[1], player)
-        winner = self.rules.check_winner(self.board, self.players)
-        if winner:
-          print(self)
-          print(f"Player {winner.stone} won.")
-          return
-        self.current = (self.current + 1) % 2
+      self.play(move)
+      if self.winner:
+        print(self)
+        print(f"P{self.winner.stone} won.")
+        return
+
+      if self.script and self.script.running():
+        time.sleep(0.25)
     return
+
+  def play(self, move):
+    player = self.players[self.current]
+
+    if not self.can_place(*move, player):
+      return False
+    self.do_move(*move, player)
+
+    self.turn += 1
+
+    self.winner = self.rules.check_winner(self.board, self.players)
+    self.current = (self.current + 1) % 2
+
+    print(self)
+    return True
+
+  def help(self):
+    return self.helpAgent.find_move(self)
 
   def can_place(self, x, y, player):
     """See if player can place stone at emplacement (x, y)
@@ -110,6 +153,7 @@ class GameHandler(object):
     player.last_move = (x, y)
     self.move_history.append((x, y))
     self.capture_history.append(self.rules.capture(self.board, player))
+    return self
 
   def undo_last_move(self, player):
     """Undo previous move from player
@@ -125,7 +169,8 @@ class GameHandler(object):
     opponent = self.players[1 - self.players.index(player)]
     for (x_0, y_0) in previous_dead:
       self.board.place(x_0, y_0, opponent)
-      player.captures -= 1
+      player.captures -= 1  # FIXME checks this
+    return self
 
   def child(self, player):
     """

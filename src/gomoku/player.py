@@ -4,7 +4,7 @@ class Player(object):
   Parameters
   ----------
   stone: int
-    Player representation
+    Player color
 
   Attributes
   ----------
@@ -21,7 +21,7 @@ class Player(object):
 
   def get_move(self):
     while 1:
-      raw = input(f"Player {self.stone} next move: $> ")
+      raw = input(f"P{self.stone} next move: $> ")
       move = raw.strip().split()
       if move == ['exit']:
         return ()

@@ -19,8 +19,10 @@ class Board(object):
   """
   def __init__(self, filename=None, size=19, cmap={0: '.', 1: 'X', 2: 'O'}):
     self.board = np.zeros((size, size))
+    self.filename = filename
     self.size = size
     self.cmap = cmap
+
     if filename:
       self.parse(filename)
 
@@ -39,6 +41,11 @@ class Board(object):
           representation += f"{self.cmap[x]:>2} "
       representation += "\n"
     return representation
+
+  def restart(self):
+    self.board = np.zeros((self.size, self.size))
+    if self.filename:
+      self.parse(self.filename)
 
   def is_empty(self, x, y):
     """Return if the intersection (x, y) is empty"""

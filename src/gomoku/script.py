@@ -4,6 +4,7 @@ import re
 class Script(object):
 
   def __init__(self, filename):
+    self.filename = filename
     self.move = []
     self.load_script(filename)
 
@@ -16,9 +17,12 @@ class Script(object):
       except Exception:
         raise Exception("File not well formatted.")
 
-  def get_move(self, player):
+  def get_move(self):
     move = self.move.pop(0)
     return move
 
   def running(self):
     return len(self.move) != 0
+
+  def restart(self):
+    self.load_script(self.filename)
