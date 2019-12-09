@@ -17,6 +17,7 @@ COLOR = '#DBB362'
 
 
 def _create_circle(self, x, y, r, **kwargs):
+  """Create circle tkinter function for Monkey patch"""
   return self.create_oval(x-r, y-r, x+r, y+r, **kwargs)
 
 
@@ -24,7 +25,26 @@ tk.Canvas.create_circle = _create_circle
 
 
 class Visualizer(object):
+  """Visualizer class
 
+  Parameters
+  ----------
+  gameHandler: GameHandler
+    The current game
+
+  Attributes
+  ----------
+  root: tk.Tk
+    Main Tk Object
+  canvas: tk.Canvas
+    The canvas where every image is drawn
+  input: bool
+    Can we send an input
+  illegal_moves: list
+    List of illegal move made this turn
+  over: bool
+    Is the game over
+  """
   def __init__(self, gameHandler):
     self.gameHandler = gameHandler
     self.hover_stone = None
@@ -52,6 +72,7 @@ class Visualizer(object):
     self.root.mainloop()
 
   def load_tkImages(self):
+    """Load tkImages with Pillow for later use"""
     stop = Image.open("./img/stop.png").resize(STONE_SIZE, Image.ANTIALIAS)
     self.tkStop = ImageTk.PhotoImage(stop)
     board = Image.open("./img/board.png").resize(BOARD_SIZE, Image.ANTIALIAS)
@@ -66,6 +87,7 @@ class Visualizer(object):
     self.tkWhiteOpac = ImageTk.PhotoImage(white)
 
   def load_frames(self):
+    """Load tk.Frames"""
     width = WINDOW_WIDTH
     height = (WINDOW_WIDTH - BOARD_SIZE[1]) // 2
 
@@ -82,6 +104,7 @@ class Visualizer(object):
     self.bottom_frame.place(relx=0, rely=1, anchor='sw')
 
   def load_canvas(self):
+    """Load tk.Canvas"""
     width = WINDOW_WIDTH
     height = BOARD_SIZE[1]
 
@@ -90,6 +113,7 @@ class Visualizer(object):
     self.canvas.place(relx=0.5, rely=0.499, anchor='center')
 
   def load_buttons(self):
+    """Load tk.Buttons"""
     btn_config = {'width': 10, 'height': 2, 'font': FONT}
 
     r_btn = tk.Button(self.top_frame, text="Restart")
@@ -105,6 +129,13 @@ class Visualizer(object):
     q_btn.place(relx=0.7, rely=0.5, anchor='se')
 
   def load_texts(self, global_msg):
+    """Load tk.Labels
+
+    Parameters
+    ----------
+    global_msg: str
+      The global message to be displayed
+    """
     txt_config = {'width': 25, 'height': 2, 'font': FONT}
     txt_config['background'] = COLOR
 
@@ -121,6 +152,7 @@ class Visualizer(object):
     global_lbl.place(relx=0.5, rely=0.85, anchor='center')
 
   def load_board(self):
+    """Reset and display the current state of the board"""
     self.illegal_moves = []
     self.canvas.delete("all")
     self.canvas.create_image(*BOARD_OFFSET, anchor='nw', image=self.tkBoard)
@@ -141,23 +173,25 @@ class Visualizer(object):
       self.canvas.create_circle(*offset, radius, fill='red')
 
     global_msg = f"Turn {self.gameHandler.turn}"
-    if self.gameHandler.winner is not None:
+    if self.gameHandler.winner is not None:  # FIXME This doesn't belong here
       global_msg = f"P{self.gameHandler.winner.stone} won."
       self.over = True
     self.load_texts(global_msg)
 
   def coords_to_pixel(self, coords):
+    """Convert board coordinates into pixel coordinates"""
     lhs = np.array(coords * BOARD_SIZE * 0.052, dtype=int)
     offset = STONE_OFFSET + BOARD_OFFSET + lhs
     return offset
 
   def start(self):
+    """Main Function, run the game"""
     if self.over:
       self.root.after(1, self.start)
       return
 
     if self.gameHandler.script and self.gameHandler.script.running():
-      move = self.gameHandler.script.input()
+      move = self.gameHandler.script.get_move()
       self.gameHandler.play(move)
       self.load_board()
       self.root.after(250, self.start)
@@ -166,7 +200,7 @@ class Visualizer(object):
     if not self.input:
       player = self.gameHandler.players[self.gameHandler.current]
       if isinstance(player, Agent):
-        move = player.input(self.gameHandler)
+        move = player.get_move(self.gameHandler)
         if not self.gameHandler.play(move):
           self.root.after(1, self.start)
           return
@@ -177,6 +211,13 @@ class Visualizer(object):
     self.root.after(1, self.start)
 
   def OnMouseMove(self, event):
+    """Mouse move callback
+
+    Parameters
+    ----------
+    event: tk.event
+      The registered event (x, y) coordinates of the mouse
+    """
     if not self.input or self.over:
       return
     coords = ((event.x, event.y) - BOARD_OFFSET) // (BOARD_SIZE * 0.052)
@@ -191,6 +232,13 @@ class Visualizer(object):
     self.hover_stone = self.canvas.create_image(*offset, **config)
 
   def OnMouseDown(self, event):
+    """Mouse left click callback
+
+    Parameters
+    ----------
+    event: tk.event
+      The registered event (x, y) coordinates of the click
+    """
     if not self.input or self.over:
       return
     coords = ((event.x, event.y) - BOARD_OFFSET) // (BOARD_SIZE * 0.052)
@@ -209,6 +257,7 @@ class Visualizer(object):
       self.canvas.create_image(*offset, anchor="nw", image=self.tkStop)
 
   def OnRestartPressed(self):
+    """Restart Button callback"""
     self.gameHandler.restart()
     self.hover_stone = None
     self.input = False
@@ -217,10 +266,12 @@ class Visualizer(object):
     self.load_board()
 
   def OnQuitPressed(self):
+    """Quit Button callback"""
     self.root.destroy()
 
   def OnHelpPressed(self, iteration=0):
-    move = self.gameHandler.help()
+    """Help Button callback"""
+    move = self.gameHandler.move_help()
     if self.gameHandler.play(move):
       self.input = False
       self.load_board()

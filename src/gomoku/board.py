@@ -43,6 +43,7 @@ class Board(object):
     return representation
 
   def restart(self):
+    """Reset board to it's initial state"""
     self.board = np.zeros((self.size, self.size))
     if self.filename:
       self.parse(self.filename)

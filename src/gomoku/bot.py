@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from anytree import Node, RenderTree
+from anytree import Node, RenderTree  # FIXME Remove this in the future -42
 import numpy as np
 
 from gomoku.heuristics import capture_heuristic, simple_heuristic

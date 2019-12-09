@@ -34,12 +34,14 @@ class GameHandler(object):
     Current In-game turn
   winner: Player
     Player who won
+  helpAgent: Agent
+    Agent who predict the next move if we need help
   """
   def __init__(self, board, players, rules, mode, script=None, size=19):
     self.board = board
     self.players = players
     self.rules = rules
-    self.mode = mode
+    self.mode = mode  # FIXME Never used, useless ?
     self.script = script
     self.size = size
 
@@ -53,6 +55,7 @@ class GameHandler(object):
     self.begin = -1
 
   def restart(self):
+    """Reset all attributes to their initial states"""
     self.board.restart()
     self.players[0].captures = 0
     self.players[1].captures = 0
@@ -96,6 +99,18 @@ class GameHandler(object):
     return
 
   def play(self, move):
+    """Try to play the given move.
+
+    Parameters
+    ----------
+    move: tuple, 2d-array
+      The intersection where we want to play (x, y)
+
+    Return
+    ------
+    succed: bool
+      True if we can play at this intersection, else False
+    """
     player = self.players[self.current]
 
     if not self.can_place(*move, player):
@@ -110,7 +125,8 @@ class GameHandler(object):
     print(self)
     return True
 
-  def help(self):
+  def move_help(self):
+    """Return the best predicted move for the player"""
     return self.helpAgent.find_move(self)
 
   def can_place(self, x, y, player):
