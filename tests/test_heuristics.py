@@ -28,10 +28,11 @@ OPEN_ENDS = range(2)
 BLACK, WHITE = 1, 2
 FILES = ["one_stone", "two_stones", "bad_two", "ok_two", "good_two",
          "bad_three", "ok_three", "good_three", "four", "five", "empty",
-         "please_capture", "can_do_four"]
+         "please_capture", "can_do_four", "strong_move"]
 BOARDS = {path: Board(eval_path(path)).board for path in FILES}
 NODES = {path: game_handler(path) for path in FILES}
 BEST_MOVES = {"please_capture": [(12, 12)], "can_do_four": [(11, 8), (11, 12)]}
+EXPERT_MOVES = {"strong_move": [(11, 10)]}
 
 
 @pytest.mark.parametrize("consecutive", CONSECUTIVE)
@@ -120,28 +121,44 @@ def test_minimax_depth_0():
           w_ag.minimax(NODES["good_three"], move(9, 10), 0, True))
 
 
-def test_minimax_depth_1():
-  w_ag = MiniMaxAgent(WHITE)
-  assert (w_ag.minimax(NODES["good_three"], move(11, 9), 1, True) >
-          w_ag.minimax(NODES["good_three"], move(9, 10), 1, True))
-  assert (w_ag.minimax(NODES["bad_three"], move(9, 13), 1, True) >
-          w_ag.minimax(NODES["bad_three"], move(8, 11), 1, True))
-
-
 def test_simple_evaluation():
-  np.set_printoptions(linewidth=np.inf, precision=1)
+  np.set_printoptions(linewidth=np.inf, precision=4)
   for name, best_moves in BEST_MOVES.items():
     w_ag = MiniMaxAgent(WHITE)
     score_map = w_ag.simple_evaluation(NODES[name])
     candidate = np.unravel_index(np.argmax(score_map, axis=None),
                                  score_map.shape)
+    # print(NODES[name])
+    # print(f"for above board, candidate was: {human_move(candidate)}")
+    # print(*score_map, sep='\n')
     assert (human_move(candidate) in best_moves)
 
 
-@pytest.mark.parametrize("depth", [0, 1, 2])
+@pytest.mark.parametrize("depth", [2, 3])
 @pytest.mark.parametrize("solution", BEST_MOVES.items())
 def test_depth(depth, solution):
   name, best_moves = solution
   w_ag = MiniMaxAgent(WHITE, depth=depth)
   candidate = w_ag.find_move(NODES[name])
+  # print(NODES[name])
+  # print(f"for above board, candidate was: {human_move(candidate)}")
   assert (human_move(candidate) in best_moves)
+
+
+def test_minimax_depth_2():
+  w_ag = MiniMaxAgent(WHITE)
+  assert (w_ag.minimax(NODES["good_three"], move(11, 9), 2, True) >
+          w_ag.minimax(NODES["good_three"], move(9, 10), 2, True))
+  assert (w_ag.minimax(NODES["bad_three"], move(8, 11), 2, True) >
+          w_ag.minimax(NODES["bad_three"], move(9, 13), 2, True))
+
+
+# @pytest.mark.parametrize("depth", [6])
+# @pytest.mark.parametrize("solution", EXPERT_MOVES.items())
+# def test_expert_moves(depth, solution):
+#   name, best_moves = solution
+#   w_ag = MiniMaxAgent(WHITE, depth=depth)
+#   candidate = w_ag.find_move(NODES[name])
+#   # print(NODES[name])
+#   # print(f"for above board, candidate was: {human_move(candidate)}")
+#   assert (human_move(candidate) in best_moves)

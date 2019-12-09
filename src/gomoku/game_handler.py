@@ -1,7 +1,7 @@
 import time
 
-from gomoku.utils import is_there_stones_around
 from gomoku.bot import Agent, MiniMaxAgent
+from gomoku.utils import is_there_stones_around
 
 
 class GameHandler(object):
@@ -50,6 +50,7 @@ class GameHandler(object):
     self.turn = 1
     self.winner = None
     self.helpAgent = MiniMaxAgent()
+    self.begin = -1
 
   def restart(self):
     self.board.restart()
@@ -64,6 +65,7 @@ class GameHandler(object):
     self.move_history = []
     self.turn = 1
     self.winner = None
+    self.begin = -1
     return self
 
   def start(self):
@@ -72,6 +74,7 @@ class GameHandler(object):
     while 1:
       player = self.players[self.current]
 
+      self.begin = time.time()
       if isinstance(player, Agent):
         move = player.find_move(self)
       elif not self.script or not self.script.running():
@@ -199,8 +202,10 @@ class GameHandler(object):
   def __str__(self):
     representation = f"\033[2J\033[H{self.board}"
     representation += f"X: {self.players[0].captures} stone captured\n"
-    representation += f"O: {self.players[1].captures} stone captured"
-    if len(self.error) != 0:
-      representation += f"\n{self.error}"
+    representation += f"O: {self.players[1].captures} stone captured\n"
+    if self.begin > 0:
+      representation += f"\nMove took {time.time() - self.begin}s, so fast!"
+    # if len(self.error) != 0:
+    #   representation += f"{self.error}"
     self.error = ""
     return representation
