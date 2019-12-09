@@ -183,8 +183,9 @@ class GameHandler(object):
     """
     x, y = self.move_history.pop()
     previous_dead = self.capture_history.pop()
-    self.board.remove(x, y)
-    opponent = self.players[1 - self.players.index(player)]
+    if self.board.is_stone(x, y, player):
+      self.board.remove(x, y)
+    opponent = self.players[1 - self.players.index(player)] # FIXME Not optimal
     for (x_0, y_0) in previous_dead:
       self.board.place(x_0, y_0, opponent)
       player.captures -= 1  # FIXME checks this

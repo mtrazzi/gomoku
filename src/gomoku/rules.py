@@ -17,9 +17,9 @@ class Rules(object):
       stone1_x, stone1_y = x + offset_x,     y + offset_y
       stone2_x, stone2_y = x + offset_x * 2, y + offset_y * 2
       if not board.is_stone(stone1_x, stone1_y, player) \
-          and not board.is_stone(stone2_x, stone2_y, player) \
-          and not board.is_empty(stone1_x, stone1_y)         \
-              and not board.is_empty(stone2_x, stone2_y):
+         and not board.is_stone(stone2_x, stone2_y, player) \
+         and not board.is_empty(stone1_x, stone1_y)         \
+         and not board.is_empty(stone2_x, stone2_y):
         return True
     return False
 
@@ -51,9 +51,9 @@ class Rules(object):
       stone1_x, stone1_y = x + offset_x,     y + offset_y
       stone2_x, stone2_y = x + offset_x * 2, y + offset_y * 2
       if not board.is_stone(stone1_x, stone1_y, player) \
-          and not board.is_stone(stone2_x, stone2_y, player) \
-          and not board.is_empty(stone1_x, stone1_y)         \
-              and not board.is_empty(stone2_x, stone2_y):
+         and not board.is_stone(stone2_x, stone2_y, player) \
+         and not board.is_empty(stone1_x, stone1_y)         \
+         and not board.is_empty(stone2_x, stone2_y):
           board.remove(stone1_x, stone1_y)
           board.remove(stone2_x, stone2_y)
           player.captures += 2

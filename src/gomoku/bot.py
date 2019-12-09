@@ -78,9 +78,6 @@ class MiniMaxAgent(Agent):
     self.debug = False
 
   def find_move(self, gh):
-    # If empty, start with the center
-    if np.sum(gh.board.board) == 0:
-      return gh.size // 2, gh.size // 2
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
     # Find the list of best moves using this score map
@@ -203,7 +200,9 @@ class MiniMaxAgent(Agent):
     """
     player, opponent = self.return_players(node, max_player)
     # start your estimation of the move by doing the move
-    node.do_move(move[0], move[1], player)
+    if not node.board.is_empty(*move):
+      return -np.Inf
+    node.do_move(*move, player)
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
       val = self.evaluation(node.board.board, self.stone, 1 - max_player,
