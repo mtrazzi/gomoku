@@ -37,11 +37,10 @@ class GameHandler(object):
   helpAgent: Agent
     Agent who predict the next move if we need help
   """
-  def __init__(self, board, players, rules, mode, script=None, size=19):
+  def __init__(self, board, players, rules, script=None, size=19):
     self.board = board
     self.players = players
     self.rules = rules
-    self.mode = mode  # FIXME Never used, useless ?
     self.script = script
     self.size = size
 

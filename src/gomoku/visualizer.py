@@ -200,7 +200,7 @@ class Visualizer(object):
     if not self.input:
       player = self.gameHandler.players[self.gameHandler.current]
       if isinstance(player, Agent):
-        move = player.get_move(self.gameHandler)
+        move = player.find_move(self.gameHandler)
         if not self.gameHandler.play(move):
           self.root.after(1, self.start)
           return
