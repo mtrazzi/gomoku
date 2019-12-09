@@ -109,7 +109,7 @@ class Rules(object):
     player: Player
       The current player
     """
-    return True
+    return True #FIXME
     x, y = player.last_move
     threes = 0
     for offset_x, offset_y in COORDS_LIST[::2]:

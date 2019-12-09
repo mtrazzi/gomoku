@@ -30,7 +30,8 @@ FILES = ["one_stone", "two_stones", "bad_two", "ok_two", "good_two",
          "please_capture", "can_do_four", "strong_move"]
 BOARDS = {path: Board(eval_path(path)).board for path in FILES}
 NODES = {path: game_handler(path) for path in FILES}
-BEST_MOVES = {"please_capture": [(12, 12)], "can_do_four": [(11, 8), (11, 12)]}
+BEST_MOVES = {"please_capture": [(12, 12)], "can_do_four": [(11, 8), (11, 12)],
+              "good_three": [(11, 9), (7, 13)]}
 EXPERT_MOVES = {"strong_move": [(11, 10)]}
 
 
@@ -142,14 +143,6 @@ def test_depth(depth, solution):
   # print(NODES[name])
   # print(f"for above board, candidate was: {human_move(candidate)}")
   assert (human_move(candidate) in best_moves)
-
-
-def test_minimax_depth_2():
-  w_ag = MiniMaxAgent(WHITE)
-  assert (w_ag.minimax(NODES["good_three"], move(11, 9), 2, True) >
-          w_ag.minimax(NODES["good_three"], move(9, 10), 2, True))
-  assert (w_ag.minimax(NODES["bad_three"], move(8, 11), 2, True) >
-          w_ag.minimax(NODES["bad_three"], move(9, 13), 2, True))
 
 
 # @pytest.mark.parametrize("depth", [6])

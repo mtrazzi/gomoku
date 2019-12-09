@@ -78,6 +78,9 @@ class MiniMaxAgent(Agent):
     self.debug = False
 
   def find_move(self, gh):
+    # If empty, start with the center
+    if np.sum(gh.board.board) == 0:
+      return gh.size // 2, gh.size // 2
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
     # Find the list of best moves using this score map
@@ -92,9 +95,11 @@ class MiniMaxAgent(Agent):
       values.append(self.minimax(gh, coord, self.depth - 1, True, tree))
       tree_list.append(tree)
     if self.debug:
+      print(gh.board)
       print(f"hcandidates={hcand}")
       for i, tree in enumerate(tree_list):
         tree.val = values[i]
+        count = 0
         for pre, _, node in RenderTree(tree):
           print("%s%s (val = %2d)" % (pre, human_move(node.name), node.val))
     # return the best candidate
@@ -219,9 +224,8 @@ class MiniMaxAgent(Agent):
                                              1 - max_player, new_tree, lim[0],
                                              lim[1]))
         new_tree.val = val
-        if sign * (lim[max_player] - val) >= 0:
+        if sign * (lim[1 - max_player] - val) >= 0:
           break
-        lim[1 - max_player] = sign * min(sign * lim[1 - max_player],
-                                         sign * val)
+        lim[max_player] = sign * min(sign * lim[max_player], sign * val)
     node.undo_last_move(player)
     return val
