@@ -19,8 +19,7 @@ def game_handler(board_name):
   players = [MiniMaxAgent(1), MiniMaxAgent(2)]
   return GameHandler(board=Board(filename=eval_path(board_name)),
                      players=players,
-                     rules=Rules(),
-                     mode="botvsbot")
+                     rules=Rules())
 
 
 CONSECUTIVE = range(1, 5)

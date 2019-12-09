@@ -75,7 +75,7 @@ class MiniMaxAgent(Agent):
     super().__init__(stone)
     self.depth = depth
     self.max_top_moves = max_top_moves
-    self.debug = True
+    self.debug = False
 
   def find_move(self, gh):
     # If empty, start with the center

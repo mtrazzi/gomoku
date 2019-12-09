@@ -103,7 +103,7 @@ def score(consecutive, open_ends, my_turn):
   turn.
   """
   if consecutive >= 5:
-    return np.inf
+    return 1e16
   elif consecutive == 4:
     if open_ends == 1:
       return 1e10 if my_turn else 5e1
