@@ -13,7 +13,9 @@
         "-p1",
         "human",
         "-p2",
-        "human"
+        "human",
+        "-b",
+        "boards/debug/hardcore.txt"
       ]
     }
   ]

@@ -66,7 +66,7 @@ class Rules(object):
       The current player
     """
     x, y = player.last_move
-    for dx, dy in SLOPES[::2]:
+    for dx, dy in SLOPES:
       for _x, _y in coordinates(x, y, -dx, -dy, 5):
         if all_equal(coordinates(_x, _y, dx, dy, 5), board.board, player.stone):
           return True
