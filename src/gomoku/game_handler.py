@@ -216,12 +216,14 @@ class GameHandler(object):
     return children
 
   def __str__(self):
+    player = self.players[self.current]
+
     representation = f"\033[2J\033[H{self.board}"
     representation += f"X: {self.players[0].captures} stone captured\n"
     representation += f"O: {self.players[1].captures} stone captured\n"
     if self.begin > 0:
       representation += f"\nMove took {time.time() - self.begin}s, so fast!"
-    # if len(self.error) != 0:
-    #   representation += f"{self.error}"
+    if len(self.error) != 0 and isinstance(player, Agent):
+      representation += f"{self.error}"
     self.error = ""
     return representation

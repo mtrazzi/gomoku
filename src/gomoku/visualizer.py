@@ -169,8 +169,8 @@ class Visualizer(object):
     if len(self.gameHandler.move_history) > 0:
       last_move = self.gameHandler.move_history[-1][::-1]
       offset = self.coords_to_pixel(last_move) + STONE_SIZE // 2
-      radius = STONE_SIZE[0] // 6
-      self.canvas.create_circle(*offset, radius, fill='red')
+      radius = STONE_SIZE[0] // 2
+      self.canvas.create_circle(*offset, radius, outline="white", width=2)
 
     global_msg = f"Turn {self.gameHandler.turn}"
     if self.gameHandler.winner is not None:  # FIXME This doesn't belong here

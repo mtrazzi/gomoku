@@ -155,7 +155,6 @@ class Rules(object):
   def can_break_five(self, gh, player, opponent):
     """Assuming that there are five aligned, returns True if player can break
     all the five alignments from his opponent."""
-
     for x in range(gh.board.size):
       for y in range(gh.board.size):
         if (gh.board.is_empty(x, y) and
