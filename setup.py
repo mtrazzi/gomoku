@@ -1,5 +1,5 @@
-from setuptools import setup, find_packages
-import src.gomoku # pytype:disable=import-error
+from setuptools import find_packages, setup
+import src.gomoku  # pytype:disable=import-error
 
 with open('README.md') as f:
   readme = f.read()
