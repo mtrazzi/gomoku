@@ -1,3 +1,7 @@
+from gomoku.heuristics import nb_consecutives
+from gomoku.utils import coordinates, all_equal
+
+
 class Rules(object):
   """Class Rules
   """
@@ -72,29 +76,9 @@ class Rules(object):
       The current player
     """
     x, y = player.last_move
-    aligned = False
-    for offset_x, offset_y in COORDS_LIST[::2]:
-      for i in range(5):
-        _x = x - i * offset_x
-        _y = y - i * offset_y
-        bound_x = _x + offset_x * 4
-        bound_y = _y + offset_y * 4
-        if _x < 0 or _x >= board.size or _y < 0 or _y >= board.size:
-          continue
-        if bound_x < 0 or bound_x >= board.size \
-           or bound_y < 0 or bound_y >= board.size:
-          continue
-        aligned = True
-        coords = [(_x + offset_x * 0, _y + offset_y * 0),
-                  (_x + offset_x * 1, _y + offset_y * 1),
-                  (_x + offset_x * 2, _y + offset_y * 2),
-                  (_x + offset_x * 3, _y + offset_y * 3),
-                  (_x + offset_x * 4, _y + offset_y * 4)]
-        for v, w in coords:
-          if not board.is_stone(v, w, player):
-            aligned = False
-            break
-        if aligned:
+    for dx, dy in COORDS_LIST[::2]:
+      for _x, _y in coordinates(x, y, -dx, -dy, 5):
+        if all_equal(coordinates(_x, _y, dx, dy, 5), board.board, player.stone):
           return True
     return False
 
@@ -109,36 +93,22 @@ class Rules(object):
     player: Player
       The current player
     """
-    return True #FIXME
-    x, y = player.last_move
-    threes = 0
-    for offset_x, offset_y in COORDS_LIST[::2]:
+    (x, y), threes, size = player.last_move, 0, board.size
+    for dx, dy in COORDS_LIST[::2]:
       i = 0
       while i != 5:
-        _x = x - i * offset_x
-        _y = y - i * offset_y
-        bound_x = _x + offset_x * 4
-        bound_y = _y + offset_y * 4
-        if _x < 0 or _x >= board.size or _y < 0 or _y >= board.size:
+        _x, _y = x - i * dx, y - i * dy
+        bound_x, bound_y = _x + dx * 4, _y + dy * 4
+        if (_x < 0 or _x >= size or _y < 0 or _y >= size or
+            bound_x < 0 or bound_x >= size or bound_y < 0 or bound_y >= size):
           i += 1
           continue
-        if bound_x < 0 or bound_x >= board.size \
-           or bound_y < 0 or bound_y >= board.size:
-          i += 1
-          continue
-        free = 0
-        same = 0
-        coords = [(_x + offset_x * 0, _y + offset_y * 0),
-                  (_x + offset_x * 1, _y + offset_y * 1),
-                  (_x + offset_x * 2, _y + offset_y * 2),
-                  (_x + offset_x * 3, _y + offset_y * 3),
-                  (_x + offset_x * 4, _y + offset_y * 4)]
+        free = same = 0
+        coords = coordinates(_x, _y, dx, dy)
         for j in range(5):
           v, w = coords[j]
-          if board.is_stone(v, w, player):
-            same += 1
-          elif board.is_empty(v, w):
-            free += 1
+          same += board.is_stone(v, w, player)
+          free += board.is_empty(v, w)
         if free == 2 and same == 3:
           threes += 1
           if i == 0:

@@ -145,7 +145,7 @@ def test_depth(depth, solution):
   assert (human_move(candidate) in best_moves)
 
 
-# @pytest.mark.parametrize("depth", [6])
+# @pytest.mark.parametrize("depth", [3])
 # @pytest.mark.parametrize("solution", EXPERT_MOVES.items())
 # def test_expert_moves(depth, solution):
 #   name, best_moves = solution

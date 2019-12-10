@@ -71,11 +71,12 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, stone=1, depth=3, max_top_moves=5):
+  def __init__(self, stone=1, depth=0, max_top_moves=5, simple_eval_depth=0):
     super().__init__(stone)
     self.depth = depth
     self.max_top_moves = max_top_moves
     self.debug = False
+    self.simple_eval_depth = simple_eval_depth
 
   def find_move(self, gh):
     # If empty, start with the center
@@ -99,7 +100,6 @@ class MiniMaxAgent(Agent):
       print(f"hcandidates={hcand}")
       for i, tree in enumerate(tree_list):
         tree.val = values[i]
-        count = 0
         for pre, _, node in RenderTree(tree):
           print("%s%s (val = %2d)" % (pre, human_move(node.name), node.val))
     # return the best candidate
@@ -130,7 +130,7 @@ class MiniMaxAgent(Agent):
           continue
         # select top max_moves_checked moves with evaluation of depth one
         if gh.can_place(x, y, player):
-          score_map[x][y] = self.minimax(gh, (x, y), 0, True)
+          score_map[x][y] = self.minimax(gh, (x, y), self.simple_eval_depth, True)
     return score_map
 
   def best_moves(self, score_map):
