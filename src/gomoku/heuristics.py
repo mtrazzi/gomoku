@@ -5,24 +5,71 @@ from gomoku.utils import all_equal, coordinates, opposite
 SLOPES = [[1, 0], [-1, 1], [0, 1], [1, 1]]
 
 
-def nb_consecutives(x, y, dx, dy, m, color):
-  if m[x][y] != color:
+def nb_consecutives(x, y, dx, dy, position, color):
+  """Maximum number of consecutive stones of color `color` in the board position
+  `position`,starting from (x,y) and using slope (dx, dy).
+
+  Parameters
+  ----------
+  x: int
+    x-coordinate of the start position
+  y: int
+    x-coordinate of the start position
+  dx: int
+    x-coordinate slope
+  dy: int
+    y-coordinate slope
+  position: numpy.ndarray
+    position of the board
+  color:
+    what color we want the consecutive stones to be
+
+  Return
+  ------
+  max_consec: int
+    Max. number of consecutive stones of color starting at x,y, with slope dx/dy
+  """
+  if position[x][y] != color:
     return 0
   # don't start counting if you're not the first stone of a series
-  if ((0 <= x - dx < len(m)) and (0 <= y - dy < len(m))
-      and m[x - dx][y - dy] == color):
+  if ((0 <= x - dx < len(position)) and (0 <= y - dy < len(position))
+      and position[x - dx][y - dy] == color):
     return 0
   # check what is the biggest nb_coordinates that you can fit in direction dx/dy
   nb_consec = 1
   while True:
     nb_consec += 1
     coord = coordinates(x, y, dx, dy, nb_consec)
-    if not all_equal(coord, m, color):
+    if not all_equal(coord, position, color):
       return nb_consec - 1
 
 
 def nb_open_ends(x, y, dx, dy, nb_consec, position):
-  """Check if the extreme ends are empty or not."""
+  """Number of empty intersections (0, 1 or 2) next to the `nb_consec` stones
+  (starting from (x,y) and using slope (dx, dy)) in the board position
+  `position`.
+
+  Parameters
+  ----------
+  x: int
+    x-coordinate of the start position
+  y: int
+    x-coordinate of the start position
+  dx: int
+    x-coordinate slope
+  dy: int
+    y-coordinate slope
+  nb_consec: int
+    Maximum number of consecutive stones of color `color` in the board position
+    `position`,starting from (x,y) and using slope (dx, dy).
+  position: numpy.ndarray
+    Position of the board
+
+  Return
+  ------
+  ends: int
+    number of empty intersections next to the consecutive stones
+  """
   m = len(position)
   coord = coordinates(x, y, dx, dy, nb_consec)
   # compute coordinates of open ends candidates before and after given points
@@ -35,7 +82,23 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
 
 
 def score_for_color(position, stones_color, my_turn):
-  """Score according to consecutives and open ends, for given stones' color."""
+  """Looking only at the stones of color `stones_color`, and knowing that it's
+  `my_turn` (or not), decide how good is my `position`.
+
+  Parameters
+  ----------
+  position: numpy.ndarray
+    Position of the board
+  stones_color: int
+    Color of the stones we're looking at
+  my_turn: bool
+    Is it my turn or not? Something to take into account when evaluating board.
+
+  Return
+  ------
+  tot_score: int
+    How much total score do I get based on another function `score`.
+  """
   tot = 0
   for x in range(len(position)):
     for y in range(len(position)):
@@ -96,11 +159,19 @@ def capture_heuristic(player, opponent, our_stones):
 
 
 def score(consecutive, open_ends, my_turn):
-  """
-  Returns the score corresponding to a sequence of `consecutive` consecutive
+  """Returns the score corresponding to a sequence of `consecutive` consecutive
   stones with `open_ends` open ends. Will give higher score if the color of
   the stones are the same as the color of the player playing for the current
   turn.
+
+  Parameters
+  ----------
+  nb_consec: int
+    Number of consecutive stones of color
+  open_ends: int
+    Number of empty intersections (0, 1 or 2) next to the `nb_consec` stones
+  my_turn: bool
+    Is it my turn or not? Something to take into account when evaluating board.
   """
   if consecutive >= 5:
     return 1e16
