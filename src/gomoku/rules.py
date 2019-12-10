@@ -158,7 +158,8 @@ class Rules(object):
 
     for x in range(gh.board.size):
       for y in range(gh.board.size):
-        if self.can_capture(gh.board, x, y, player):
+        if (gh.board.is_empty(x, y) and
+            self.can_capture(gh.board, x, y, player)):
           gh.do_move(x, y, player)
           if not self.aligned_win(gh.board, opponent):
             gh.undo_last_move(player)
@@ -175,11 +176,11 @@ class Rules(object):
         return player
 
       if self.aligned_win(board, player):
-        if not (self.can_reach_ten(board, opponent) or
-                self.can_break_five(game_handler, opponent, player)):
+        if (player.aligned_five_prev or
+           not (self.can_reach_ten(board, opponent) or
+                self.can_break_five(game_handler, opponent, player))):
           return player
-
+        player.aligned_five_prev = True
+      else:
+        player.aligned_five_prev = False
     return None
-
-  def have_won(self, board, player):
-    return self.aligned_win(board, player) or player.captures >= 10

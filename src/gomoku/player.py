@@ -17,6 +17,7 @@ class Player(object):
     self.stone = stone
     self.last_move = (-1, -1)
     self.captures = 0
+    self.aligned_five_prev = False
     return
 
   def get_move(self):
