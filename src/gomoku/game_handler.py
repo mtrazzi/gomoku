@@ -111,6 +111,9 @@ class GameHandler(object):
       True if we can play at this intersection, else False
     """
     player = self.players[self.current]
+    if self.rules.have_won(self.board, player):
+      self.winner = player
+      return True
 
     if not self.can_place(*move, player):
       return False

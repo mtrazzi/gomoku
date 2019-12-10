@@ -180,3 +180,6 @@ class Rules(object):
           return player
 
     return None
+
+  def have_won(self, board, player):
+    return self.aligned_win(board, player) or player.captures >= 10
