@@ -19,14 +19,17 @@ def game_handler(board_name):
 
 
 BLACK = 0
-FILES = [str(i) for i in range(10)]
+NO_DOUBLE_FREE_THREES = {
+  'legal_1': [(5, 8), True],
+  'legal_2': [(1, 4), True],
+  'legal_3': [(4, 19), True],
+  'legal_4': [(6, 9), True],
+  'illegal_1': [(5, 8), False],
+  'illegal_2': [(4, 4), False],
+}
+FILES = NO_DOUBLE_FREE_THREES.keys()
 BOARDS = {path: Board(eval_path(path)).board for path in FILES}
 NODES = {path: game_handler(path) for path in FILES}
-NO_DOUBLE_FREE_THREES = {"1": [(5, 8), True],
-                         "2": [(5, 8), True],
-                         "3": [(1, 4), True],
-                         "4": [(1, 16), True],
-                         "5": [(4, 4), True]}
 
 
 @pytest.mark.parametrize("problem", NO_DOUBLE_FREE_THREES.items())
@@ -34,5 +37,6 @@ def test_double_threes(problem):
   board_name, (move, label) = problem
   game_handler = NODES[board_name]
   board, player = game_handler.board, game_handler.players[BLACK]
+  move = [move[0] - 1, move[1] - 1]
   game_handler.do_move(*move, player)
   assert Rules().no_double_threes(board, player) == label
