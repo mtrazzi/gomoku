@@ -146,27 +146,37 @@ class Rules(object):
     return self.check_double_threes(board, np.array(threes), player)
 
   def check_captures(self, board, player):
-    for i in range(board.size):
-      for j in range(board.size):
-        if len(self.can_capture(board, i, j, player)) > 0:
+    for x in range(board.size):
+      for y in range(board.size):
+        if self.can_capture(board, x, y, player):
           return True
     return False
 
-  def check_winner(self, board, players):  # FIXME
-    for player in players:
+  def can_break_five(self, gh, player, opponent):
+    """Assuming that there are five aligned, returns True if player can break
+    all the five alignments from his opponent."""
+
+    for x in range(gh.board.size):
+      for y in range(gh.board.size):
+        if self.can_capture(gh.board, x, y, player):
+          gh.do_move(x, y, player)
+          if not self.aligned_win(gh.board, opponent):
+            gh.undo_last_move(player)
+            return True
+          gh.undo_last_move(player)
+
+  def can_reach_ten(self, board, player):
+    return player.captures >= 8 and self.check_captures(board, player)
+
+  def check_winner(self, game_handler):
+    board, players = game_handler.board, game_handler.players
+    for (player, opponent) in [players, players[::-1]]:
       if player.captures >= 10:
         return player
 
-    if self.aligned_win(board, players[0]):
-      # if self.check_captures(board, players[1]):
-      #   return players[1] if players[1].captures >= 8 else None
-      # else:
-        return players[0]
-
-    if self.aligned_win(board, players[1]):
-      # if self.check_captures(board, players[0]):
-      #   return players[0] if players[0].captures >= 8 else None
-      # else:
-        return players[1]
+      if self.aligned_win(board, player):
+        if not (self.can_reach_ten(board, opponent) or
+                self.can_break_five(game_handler, opponent, player)):
+          return player
 
     return None

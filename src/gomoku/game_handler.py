@@ -118,7 +118,7 @@ class GameHandler(object):
 
     self.turn += 1
 
-    self.winner = self.rules.check_winner(self.board, self.players)
+    self.winner = self.rules.check_winner(self)
     self.current = (self.current + 1) % 2
 
     print(self)
