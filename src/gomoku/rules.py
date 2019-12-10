@@ -12,23 +12,23 @@ class Rules(object):
 
   def can_capture(self, board, x, y, player):
     coords = np.append(SLOPES, SLOPES * -1, axis=0)
-    for offset_x, offset_y in coords:
-      bound_x = x + offset_x * 3
-      bound_y = y + offset_y * 3
-      if bound_x < 0 or bound_x >= board.size \
-         or bound_y < 0 or bound_y >= board.size:
+    size = board.size
+    captures = []
+    for dx, dy in coords:
+      bounds = np.array([(x + dx * 3), (y + dy * 3)])
+      if (bounds < [0, 0]).any() or (bounds >= [size, size]).any():
         continue
-      if not board.is_stone(bound_x, bound_y, player):
+      if not board.is_stone(*bounds, player):
         continue
 
-      stone1_x, stone1_y = x + offset_x,     y + offset_y
-      stone2_x, stone2_y = x + offset_x * 2, y + offset_y * 2
-      if not board.is_stone(stone1_x, stone1_y, player) \
-         and not board.is_stone(stone2_x, stone2_y, player) \
-         and not board.is_empty(stone1_x, stone1_y)         \
-         and not board.is_empty(stone2_x, stone2_y):
-        return True
-    return False
+      stone1 = [(x + dx), (y + dy)]
+      stone2 = [(x + dx * 2), (y + dy * 2)]
+      if not board.is_stone(*stone1, player)     \
+         and not board.is_stone(*stone2, player) \
+         and not board.is_empty(*stone1)         \
+         and not board.is_empty(*stone2):
+        captures += [stone1, stone2]
+    return captures
 
   def capture(self, board, player):
     """Manage the Capture Rule
@@ -43,30 +43,17 @@ class Rules(object):
       The current board
     player: Player
       The current player
-    """
-    dead_list = []
-    x, y = player.last_move
-    coords = np.append(SLOPES, SLOPES * -1, axis=0)
-    for offset_x, offset_y in coords:
-      bound_x = x + offset_x * 3
-      bound_y = y + offset_y * 3
-      if bound_x < 0 or bound_x >= board.size \
-         or bound_y < 0 or bound_y >= board.size:
-        continue
-      if not board.is_stone(bound_x, bound_y, player):
-        continue
 
-      stone1_x, stone1_y = x + offset_x,     y + offset_y
-      stone2_x, stone2_y = x + offset_x * 2, y + offset_y * 2
-      if not board.is_stone(stone1_x, stone1_y, player) \
-         and not board.is_stone(stone2_x, stone2_y, player) \
-         and not board.is_empty(stone1_x, stone1_y)         \
-         and not board.is_empty(stone2_x, stone2_y):
-          board.remove(stone1_x, stone1_y)
-          board.remove(stone2_x, stone2_y)
-          player.captures += 2
-          dead_list += [(stone1_x, stone1_y), (stone2_x, stone2_y)]
-    return dead_list
+    Return
+    ------
+    captures: list
+      List of coordinates for the captured stones
+    """
+    captures = self.can_capture(board, *player.last_move, player)
+    for stone in captures:
+      board.remove(*stone)
+      player.captures += 1
+    return captures
 
   def aligned_win(self, board, player):
     """Manage the Aligned 5 Rule
@@ -145,7 +132,6 @@ class Rules(object):
           continue
         free = same = 0
         coords = coordinates(_x, _y, dx, dy)
-        print(coords)
         for j in range(5):
           v, w = coords[j]
           same += board.is_stone(v, w, player)
@@ -162,7 +148,7 @@ class Rules(object):
   def check_captures(self, board, player):
     for i in range(board.size):
       for j in range(board.size):
-        if self.can_capture(board, i, j, player):
+        if len(self.can_capture(board, i, j, player)) > 0:
           return True
     return False
 
