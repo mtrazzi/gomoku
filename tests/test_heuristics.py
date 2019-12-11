@@ -154,3 +154,13 @@ def test_depth(depth, solution):
 #   # print(NODES[name])
 #   # print(f"for above board, candidate was: {human_move(candidate)}")
 #   assert (human_move(candidate) in best_moves)
+
+@pytest.mark.parametrize("depth", [2, 3])
+@pytest.mark.parametrize("solution", BEST_MOVES.items())
+def test_alpha_beta_memory(depth, solution):
+  name, best_moves = solution
+  w_ag = MiniMaxAgent(WHITE, depth=depth)
+  candidate = w_ag.find_move(NODES[name])
+  # print(NODES[name])
+  # print(f"for above board, candidate was: {human_move(candidate)}")
+  assert (human_move(candidate) in best_moves)

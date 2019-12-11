@@ -182,7 +182,7 @@ def score(consecutive, open_ends, my_turn):
       return 1e12 if my_turn else 1e11
   elif consecutive == 3:
     if open_ends == 1:
-      return 1e4 if my_turn else 5e1
+      return 1e2 if my_turn else 5e1
     elif open_ends == 2:  # FIXME: later, deal with spaces outside open ends
       return 1e5 if my_turn else 5e4
   elif consecutive == 2:

@@ -71,12 +71,13 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, stone=1, depth=2, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, stone=1, depth=3, max_top_moves=2, simple_eval_depth=0):
     super().__init__(stone)
     self.depth = depth
     self.max_top_moves = max_top_moves
     self.debug = False
     self.simple_eval_depth = simple_eval_depth
+    self.table = {}
 
   def find_move(self, gh):
     # If empty, start with the center
@@ -93,7 +94,8 @@ class MiniMaxAgent(Agent):
               # for coord in candidates]
     for coord in candidates:
       tree = Node(coord, val=0)
-      values.append(self.minimax(gh, coord, self.depth - 1, True, tree))
+      # values.append(self.ab_memory(gh, coord, self.depth - 1, True, tree))
+      values.append(self.mtdf(gh, coord, self.depth - 1, tree))
       tree_list.append(tree)
     if self.debug:
       print(gh.board)
@@ -125,12 +127,12 @@ class MiniMaxAgent(Agent):
     for x in range(size):
       for y in range(size):
         # only do moves that are near current stones
-        if not is_there_stones_around(gh.board.board, x, y):
-          score_map[x][y] = -np.inf
+        if (not is_there_stones_around(gh.board.board, x, y) or
+           (not gh.board.is_empty(x, y))):
           continue
         # select top max_moves_checked moves with evaluation of depth one
-        if gh.can_place(x, y, player):
-          score_map[x][y] = self.minimax(gh, (x, y), self.simple_eval_depth, True)
+          # score_map[x][y] = self.ab_memory(gh, (x, y), self.simple_eval_depth, True)
+        score_map[x][y] = self.mtdf(gh, (x, y), self.simple_eval_depth)
     return score_map
 
   def best_moves(self, score_map):
@@ -229,3 +231,85 @@ class MiniMaxAgent(Agent):
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
     node.undo_last_move(player)
     return val
+
+  def ab_memory(self, node, move, depth, max_player, tree=None,
+                             alpha=-np.inf, beta=np.inf):
+    """Same as alpha beta pruning but uses hash to retrieve values for things
+    it saw before.
+
+    Parameters
+    ----------
+    node: GameHandler
+      The current node being evaluated (a.k.a. board position)
+    move: int, int
+      The last move being played in the position to be evaluated
+    depth: int
+      The maximum depth of the tree for lookahead in the minimax algorithm
+    max_player: bool
+      Are we maximizing or not?.
+
+    Return
+    ------
+    value: int
+      The estimated value of the current node (position) being evaluated.
+    """
+    # tests if already seen node (that's why it's called "with memory")
+    # cf. https://people.csail.mit.edu/plaat/mtdf.html#abmem
+    node_id = hash(node.board.board.tostring())
+    if node_id in self.table:
+      n = self.table[node_id]
+      if n.lowerbound >= beta:
+        return n.lowerbound
+      if n.upperbound <= alpha:
+        return n.upperbound
+      alpha = max(alpha, n.lowerbound)
+      beta = min(beta, n.upperbound)
+
+    player, opponent = self.return_players(node, max_player)
+    # start your estimation of the move by doing the move
+    if not node.board.is_empty(*move):
+      return -np.Inf
+    node.do_move(*move, player)
+    if depth == 0:
+      # after putting my stone, let's see what's the situation when not my turn
+      val = self.evaluation(node.board.board, self.stone, 1 - max_player,
+                            player, opponent)
+    else:
+      # using a sign to avoid two conditions in minimax
+      sign = 1 if max_player else -1
+      val = sign * np.inf
+      lim = [alpha, beta]
+      for new_move in node.child(player):
+        new_tree = Node(new_move, parent=tree, val=0)
+        val = sign * min(sign * val,
+                         sign * self.minimax(node, new_move, depth - 1,
+                                             1 - max_player, new_tree, lim[0],
+                                             lim[1]))
+        new_tree.val = val
+        if sign * (lim[1 - max_player] - val) >= 0:
+          break
+        lim[max_player] = sign * min(sign * lim[max_player], sign * val)
+    node.undo_last_move(player)
+
+    n = type('obj', (object,), {'lowerbound': -np.inf, 'upperbound': np.inf})()
+    if val <= alpha:
+      n.upperbound = val
+    if val > alpha and val < beta:
+      n.lowerbound = val
+      n.upperbound = val
+    if val >= beta:
+      n.lowerbound = val
+    self.table[node_id] = n
+    return val
+
+  def mtdf(self, node, move, depth, tree=None, f=0):
+    """cf. https://en.wikipedia.org/wiki/MTD-f"""
+    g, lower_bound, upper_bound = f, -np.inf, np.inf
+    while lower_bound < upper_bound:
+        beta = max(g, lower_bound + 1)
+        g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)
+        if g < beta:
+          upper_bound = g
+        else:
+          lower_bound = g
+    return g
