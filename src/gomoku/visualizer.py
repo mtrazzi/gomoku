@@ -51,6 +51,7 @@ class Visualizer(object):
     self.input = False
     self.illegal_moves = []
     self.over = False
+    self.coords = [-1, -1]
 
     self.root = tk.Tk()
     self.root.title("Gomoku")
@@ -186,6 +187,21 @@ class Visualizer(object):
 
   def start(self):
     """Main Function, run the game"""
+    if self.input:
+      if self.gameHandler.play(self.coords[::-1]):
+        self.load_board()
+        self.input = False
+        self.coords = [-1, -1]
+      elif self.gameHandler.board.is_empty(*self.coords[::-1]):
+        if self.coords in self.illegal_moves:
+          self.root.after(1, self.start)
+          return
+        self.illegal_moves.append(self.coords)
+        offset = self.coords_to_pixel(self.coords)
+        self.canvas.create_image(*offset, anchor="nw", image=self.tkStop)
+      self.root.after(1, self.start)
+      return
+
     if self.over:
       self.root.after(1, self.start)
       return
@@ -245,16 +261,7 @@ class Visualizer(object):
     if (coords > 18).any() or (coords < 0).any():
       return
 
-    coords = [int(x) for x in coords]
-    if self.gameHandler.play(coords[::-1]):
-      self.load_board()
-      self.input = False
-    elif self.gameHandler.board.is_empty(*coords[::-1]):
-      if coords in self.illegal_moves:
-        return
-      self.illegal_moves.append(coords)
-      offset = self.coords_to_pixel(coords)
-      self.canvas.create_image(*offset, anchor="nw", image=self.tkStop)
+    self.coords = [int(x) for x in coords]
 
   def OnRestartPressed(self):
     """Restart Button callback"""
@@ -263,6 +270,7 @@ class Visualizer(object):
     self.input = False
     self.illegal_moves = []
     self.over = False
+    self.coords = [-1, -1]
     self.load_board()
 
   def OnQuitPressed(self):

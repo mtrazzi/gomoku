@@ -6,7 +6,6 @@ from gomoku.board import Board
 from gomoku.bot import MiniMaxAgent, RandomAgent
 from gomoku.game_handler import GameHandler
 from gomoku.player import Player
-from gomoku.rules import Rules
 from gomoku.script import Script
 from gomoku.visualizer import Visualizer
 
@@ -47,7 +46,6 @@ if __name__ == '__main__':
 
   game = GameHandler(board=Board(filename=args.board),
                      players=players,
-                     rules=Rules(),
                      script=script)
 
   if args.debug:

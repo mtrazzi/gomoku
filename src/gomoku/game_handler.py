@@ -1,6 +1,7 @@
 import time
 
 from gomoku.bot import Agent, MiniMaxAgent
+from gomoku.rules import Rules
 from gomoku.utils import is_there_stones_around
 
 
@@ -37,10 +38,9 @@ class GameHandler(object):
   helpAgent: Agent
     Agent who predict the next move if we need help
   """
-  def __init__(self, board, players, rules, script=None, size=19):
+  def __init__(self, board, players, script=None, size=19):
     self.board = board
     self.players = players
-    self.rules = rules
     self.script = script
     self.size = size
 
@@ -118,7 +118,7 @@ class GameHandler(object):
 
     self.turn += 1
 
-    self.winner = self.rules.check_winner(self)
+    self.winner = Rules.check_winner(self.board, self.players)
     self.current = (self.current + 1) % 2
 
     print(self)
@@ -150,7 +150,7 @@ class GameHandler(object):
     player.last_move = (x, y)
 
     self.board.place(x, y, player)
-    if not self.rules.no_double_threes(self.board, player):
+    if not Rules.no_double_threes(self.board, player):
       self.board.remove(x, y)
       self.error = f"\033[1;31mNo double free-threes allowed\033[0m"
       return False
@@ -170,7 +170,7 @@ class GameHandler(object):
     self.board.place(x, y, player)
     player.last_move = (x, y)
     self.move_history.append((x, y))
-    self.capture_history.append(self.rules.capture(self.board, player))
+    self.capture_history.append(Rules.capture(self.board, player))
     return self
 
   def undo_last_move(self, player):
