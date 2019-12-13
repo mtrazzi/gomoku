@@ -98,6 +98,7 @@ def score_for_color(position, stones_color, my_turn):
     How much total score do I get based on another function `score`.
   """
   tot = 0
+  winning_groups = 0
   for x in range(len(position)):
     for y in range(len(position)):
       if not position[x][y]:
@@ -106,8 +107,11 @@ def score_for_color(position, stones_color, my_turn):
         nb_cons = nb_consecutives(x, y, dx, dy, position, stones_color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
-          tot += score(nb_cons, op_ends, my_turn)
-  return tot
+          can_five = possible_five(position, x, y, dx, dy, nb_cons,
+                                   stones_color)
+          tot += score(nb_cons, op_ends, my_turn) * (10 * can_five + 1)
+          winning_groups += winning_stones(nb_cons, op_ends)
+  return tot + advantage_combinations(winning_groups)
 
 
 def simple_heuristic(position, color, my_turn):
@@ -154,6 +158,45 @@ def capture_heuristic(player, opponent, our_stones):
   sign = 1 if our_stones else -1
   diff = player.captures - opponent.captures
   return sign * diff * 1e8
+
+
+def past_heuristic(last_move, current_move):
+  """Returns higher score if current move is close to opponent's last move."""
+  return np.linalg.norm(np.array(last_move)-np.array(current_move))
+
+
+def possible_five(position, x, y, dx, dy, nb_consec, stones_color):
+  """Checks if an alignment has enough space to develop into a 5-in-a-row."""
+  if nb_consec >= 5:
+    return True
+  nb_stones_left = 5 - nb_consec
+  for i in range(nb_stones_left + 1):
+    # testing if it's possible to have i free intersections, then `nb_consec`
+    # stones of color `stones_color` and then 5 - i free interesections
+    coord = coordinates(x - i * dx, y - i * dy, dx, dy, 5)
+    before = coord[:i]
+    after = coord[-(nb_stones_left-i):] if nb_stones_left-i > 0 else []
+    if all_equal(before + after, position, 0):
+      return True
+  return False
+
+
+def winning_stones(consecutive, open_ends):
+  """Check if a series of stones is advantageous."""
+  return (consecutive == 3 and open_ends == 2 or
+          consecutive == 4 and open_ends >= 1 or
+          consecutive >= 5)
+
+
+def advantage_combinations(winning_groups):
+  """High score if multiple threats at once.
+
+  Parameters
+  ----------
+  winning_groups: int
+    Number of group of stones that appear as winning (e.g. free four)
+  """
+  return (winning_groups >= 2) * 1e8
 
 
 def score(consecutive, open_ends, my_turn):

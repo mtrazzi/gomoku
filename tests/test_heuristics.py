@@ -6,7 +6,8 @@ import pytest
 from gomoku.board import Board
 from gomoku.bot import MiniMaxAgent
 from gomoku.game_handler import GameHandler
-from gomoku.heuristics import score, score_for_color, simple_heuristic
+from gomoku.heuristics import (score, score_for_color, simple_heuristic,
+                               possible_five)
 from gomoku.utils import human_move, move
 
 
@@ -25,12 +26,18 @@ OPEN_ENDS = range(2)
 BLACK, WHITE = 1, 2
 FILES = ["one_stone", "two_stones", "bad_two", "ok_two", "good_two",
          "bad_three", "ok_three", "good_three", "four", "five", "empty",
-         "please_capture", "can_do_four", "strong_move"]
+         "please_capture", "can_do_four", "strong_move", "cannot_do_five"]
 BOARDS = {path: Board(eval_path(path)).board for path in FILES}
 NODES = {path: game_handler(path) for path in FILES}
 BEST_MOVES = {"please_capture": [(12, 12)], "can_do_four": [(11, 8), (11, 12)],
               "good_three": [(11, 9), (7, 13)]}
 EXPERT_MOVES = {"strong_move": [(11, 10)]}
+
+
+def test_possible_five():
+  x_0, y_0 = move(10, 8)
+  assert possible_five(BOARDS["ok_three"], x_0, y_0, 0, 1, 3, BLACK)
+  assert not possible_five(BOARDS["cannot_do_five"], x_0, y_0, 0, 1, 3, BLACK)
 
 
 @pytest.mark.parametrize("consecutive", CONSECUTIVE)

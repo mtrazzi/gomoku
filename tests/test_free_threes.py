@@ -37,5 +37,5 @@ def test_double_threes(problem):
   game_handler = NODES[board_name]
   board, player = game_handler.board, game_handler.players[BLACK]
   move = [move[0] - 1, move[1] - 1]
-  game_handler.do_move(*move, player)
+  game_handler.do_move(move, player)
   assert Rules.no_double_threes(board, player) == label
