@@ -177,11 +177,11 @@ class GameHandler(object):
       self.board.remove(*move)
       self.move_history.append([move, False])
       return False
-    self.move_history.append([move, True])
-    self.capture_history.append(Rules.capture(self.board, player))
     self.state_history.append([player.last_move,
                                player.captures,
                                player.aligned_five_prev])
+    self.move_history.append([move, True])
+    self.capture_history.append(Rules.capture(self.board, player))
     return True
 
   def undo_move(self):

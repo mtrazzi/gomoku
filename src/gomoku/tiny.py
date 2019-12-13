@@ -21,6 +21,7 @@ def is_node_terminal(gameHandler):
 def heuristic(gameHandler, color):
   return 0
 
+
 class MiniMaxTiny(Agent):
   def __init__(self, color=1, depth=10, algorithm='minimax'):
     super().__init__(color)
@@ -33,11 +34,11 @@ class MiniMaxTiny(Agent):
     begin = time.time()
     self.gameHandler = gameHandler
 
-    value, move = self.minimaxRoot(self.depth)
+    # value, move = self.minimaxRoot(self.depth)
     # value, move = self.negamaxRoot(self.depth, -np.Inf, np.Inf)
     # value, move = self.alphabetaRoot(self.depth, -np.Inf, np.Inf)
     # value, move = self.pvsRoot(self.depth, -np.Inf, np.Inf)
-    # value, move = self.alphabeta_memoryRoot(self.depth, -np.Inf, np.Inf)
+    value, move = self.alphabeta_memoryRoot(self.depth, -np.Inf, np.Inf)
     # value, move = self.mtdf(self.depth, 0)
     print(f"Value for move {move}: {value}")
     print(f'Time elapse for find_move(): {time.time() - begin}')
