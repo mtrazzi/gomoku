@@ -3,7 +3,8 @@ from abc import abstractmethod
 from anytree import Node, RenderTree  # FIXME Remove this in the future -42
 import numpy as np
 
-from gomoku.heuristics import capture_heuristic, simple_heuristic
+from gomoku.heuristics import (capture_heuristic, past_heuristic,
+                               simple_heuristic)
 from gomoku.player import Player
 from gomoku.utils import human_move, is_there_stones_around, opposite
 
@@ -176,7 +177,8 @@ class MiniMaxAgent(Agent):
       The estimated value of the current node (position) being evaluated.
     """
     return (simple_heuristic(position, color, my_turn) +
-            capture_heuristic(player, opponent, player.color == self.color))
+            capture_heuristic(player, opponent, player.color == self.color) +
+            past_heuristic(opponent.last_move, player.last_move))
 
   def return_players(self, node, max_player):
     # current player depends on if we're maximizing

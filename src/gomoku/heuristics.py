@@ -162,6 +162,9 @@ def capture_heuristic(player, opponent, our_stones):
 
 def past_heuristic(last_move, current_move):
   """Returns higher score if current move is close to opponent's last move."""
+  # heuristic only valid if last move exists
+  if last_move == (-1, -1):
+    return 0
   return np.linalg.norm(np.array(last_move)-np.array(current_move))
 
 
