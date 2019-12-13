@@ -8,14 +8,16 @@
       "name": "Python: Module",
       "type": "python",
       "request": "launch",
-      "module": "gomoku.gomoku",
+      "module": "gomoku.gomoku_tmp",
       "args": [
         "-p1",
         "human",
         "-p2",
-        "human",
-        "-b",
-        "boards/debug/hardcore.txt"
+        "tiny",
+        "-d"
+        // "human",
+        // "-b",
+        // "boards/debug/hardcore.txt"
       ]
     }
   ]

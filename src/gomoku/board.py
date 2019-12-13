@@ -52,13 +52,13 @@ class Board(object):
     """Return if the intersection (x, y) is empty"""
     return self.board[x][y] == 0
 
-  def is_stone(self, x, y, player):
+  def is_stone(self, x, y, color):
     """Return if the stone at intersection (x, y) belongs to player"""
-    return self.board[x][y] == player.stone
+    return self.board[x][y] == color
 
-  def place(self, x, y, player):
+  def place(self, x, y, color):
     """Place the player stone at intersection (x, y)"""
-    self.board[x][y] = player.stone
+    self.board[x][y] = color
     return self
 
   def remove(self, x, y):

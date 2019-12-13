@@ -48,6 +48,7 @@ class GameHandler(object):
     self.error = ""
     self.capture_history = []
     self.move_history = []
+    self.state_history = []
     self.turn = 1
     self.winner = None
     self.helpAgent = MiniMaxAgent()
@@ -57,7 +58,11 @@ class GameHandler(object):
     """Reset all attributes to their initial states"""
     self.board.restart()
     self.players[0].captures = 0
+    self.players[0].last_move = (9, 9)
+    self.players[0].aligned_five_prev = False
     self.players[1].captures = 0
+    self.players[1].last_move = (9, 9)
+    self.players[1].aligned_five_prev = False
     if self.script:
       self.script.restart()
 
@@ -65,6 +70,7 @@ class GameHandler(object):
     self.error = ""
     self.capture_history = []
     self.move_history = []
+    self.state_history = []
     self.turn = 1
     self.winner = None
     self.begin = -1
@@ -83,14 +89,14 @@ class GameHandler(object):
         move = player.get_move()
       else:
         move = self.script.get_move()
-        print(f"Player {player.stone}: {move[0] + 1, move[1] + 1}")
+        print(f"Player {player.color}: {move[0] + 1, move[1] + 1}")
       if len(move) == 0:
         return
 
       self.play(move)
       if self.winner:
         print(self)
-        print(f"P{self.winner.stone} won.")
+        print(f"P{self.winner.color} won.")
         return
 
       if self.script and self.script.running():
@@ -114,7 +120,7 @@ class GameHandler(object):
 
     if not self.can_place(*move, player):
       return False
-    self.do_move(*move, player)
+    self.do_move(move, player)
 
     self.turn += 1
 
@@ -149,7 +155,7 @@ class GameHandler(object):
       return False
     player.last_move = (x, y)
 
-    self.board.place(x, y, player)
+    self.board.place(x, y, player.color)
     if not Rules.no_double_threes(self.board, player):
       self.board.remove(x, y)
       self.error = f"\033[1;31mNo double free-threes allowed\033[0m"
@@ -157,39 +163,77 @@ class GameHandler(object):
     self.board.remove(x, y)
     return True
 
-  def do_move(self, x, y, player):
-    """Place stone at emplacement (x, y)
-
-    Parameters
-    ----------
-    x, y: int
-      Coordinates
-    player: Player
-      Current Player
-    """
-    self.board.place(x, y, player)
-    player.last_move = (x, y)
-    self.move_history.append((x, y))
+  def do_move(self, move, player):
+    x, y = move
+    if (x < 0 or x >= self.board.size or y < 0 or y >= self.board.size):
+      self.move_history.append([move, False])
+      return False
+    if not self.board.is_empty(*move):
+      self.move_history.append([move, False])
+      return False
+    self.board.place(*move, player.color)
+    player.last_move = move
+    if not Rules.no_double_threes(self.board, player):
+      self.board.remove(*move)
+      self.move_history.append([move, False])
+      return False
+    self.move_history.append([move, True])
     self.capture_history.append(Rules.capture(self.board, player))
-    return self
+    self.state_history.append([player.last_move,
+                               player.captures,
+                               player.aligned_five_prev])
+    return True
 
-  def undo_last_move(self, player):
-    """Undo previous move from player
-
-    Parameters
-    ----------
-    player: Player
-      Current Player
-    """
-    x, y = self.move_history.pop()
+  def undo_move(self):
+    (x, y), succeed = self.move_history.pop()
+    if not succeed:
+      return self
     previous_dead = self.capture_history.pop()
-    if self.board.is_stone(x, y, player):
-      self.board.remove(x, y)
-    opponent = self.players[1 - self.players.index(player)]  # FIXME Not optimal
-    for (x_0, y_0) in previous_dead:
-      self.board.place(x_0, y_0, opponent)
-      player.captures -= 1  # FIXME checks this
+    last_move, captures, aligned_five_prev = self.state_history.pop()
+    stone = self.board.board[x][y]
+    player = self.players[0 if stone == 1 else 1]
+    opponent = self.players[1 if stone == 1 else 0]
+    self.board.remove(x, y)
+    for x, y in previous_dead:
+      self.board.place(x, y, opponent.color)
+    player.last_move = last_move
+    player.captures = captures
+    player.aligned_five_prev = aligned_five_prev
     return self
+
+  # def do_move(self, x, y, player):
+  #   """Place stone at emplacement (x, y)
+
+  #   Parameters
+  #   ----------
+  #   x, y: int
+  #     Coordinates
+  #   player: Player
+  #     Current Player
+  #   """
+  #   self.board.place(x, y, player.color)
+  #   player.last_move = (x, y)
+  #   self.move_history.append((x, y))
+  #   self.capture_history.append(Rules.capture(self.board, player))
+  #   return self
+
+  # def undo_last_move(self, player):
+  #   """Undo previous move from player
+
+  #   Parameters
+  #   ----------
+  #   player: Player
+  #     Current Player
+  #   """
+  #   x, y = self.move_history.pop()
+  #   previous_dead = self.capture_history.pop()
+  #   if self.board.is_stone(x, y, player.color):
+  #     self.board.remove(x, y)
+  #   opponent = self.players[1 - self.players.index(player)]
+  #   for (x_0, y_0) in previous_dead:
+  #     self.board.place(x_0, y_0, opponent.color)
+  #     player.captures -= 1
+  #   return self
 
   def child(self, player):
     """

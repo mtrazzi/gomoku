@@ -7,7 +7,6 @@ from gomoku.board import Board
 from gomoku.bot import MiniMaxAgent
 from gomoku.game_handler import GameHandler
 from gomoku.heuristics import score, score_for_color, simple_heuristic
-from gomoku.rules import Rules
 from gomoku.utils import human_move, move
 
 
@@ -18,8 +17,7 @@ def eval_path(name):
 def game_handler(board_name):
   players = [MiniMaxAgent(1), MiniMaxAgent(2)]
   return GameHandler(board=Board(filename=eval_path(board_name)),
-                     players=players,
-                     rules=Rules())
+                     players=players)
 
 
 CONSECUTIVE = range(1, 5)

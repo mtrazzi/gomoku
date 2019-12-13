@@ -1,8 +1,6 @@
 import numpy as np
 
-from gomoku.utils import all_equal, coordinates, opposite
-
-SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
+from gomoku.utils import SLOPES, all_equal, coordinates, opposite
 
 
 def nb_consecutives(x, y, dx, dy, position, color):

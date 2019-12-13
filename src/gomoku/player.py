@@ -3,7 +3,7 @@ class Player(object):
 
   Parameters
   ----------
-  stone: int
+  color: int
     Player color
 
   Attributes
@@ -13,8 +13,8 @@ class Player(object):
   last_move: tuple (x, y)
     Last move
   """
-  def __init__(self, stone):
-    self.stone = stone
+  def __init__(self, color):
+    self.color = color
     self.last_move = (-1, -1)
     self.captures = 0
     self.aligned_five_prev = False
@@ -22,7 +22,7 @@ class Player(object):
 
   def get_move(self):
     while 1:
-      raw = input(f"P{self.stone} next move: $> ")
+      raw = input(f"P{self.color} next move: $> ")
       move = raw.strip().split()
       if move == ['exit']:
         return ()

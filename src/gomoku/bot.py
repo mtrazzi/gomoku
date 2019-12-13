@@ -13,11 +13,11 @@ class Agent(Player):
 
   Parameters
   ----------
-  stone: int
+  color: int
     The color of the stone of the Agent.
   """
-  def __init__(self, stone):
-    super().__init__(stone)
+  def __init__(self, color):
+    super().__init__(color)
 
   @abstractmethod
   def find_move(self, game_handler) -> (int, int):
@@ -40,11 +40,11 @@ class RandomAgent(Agent):
 
   Parameters
   ----------
-  stone: int
+  color: int
     The color of the stone of the Agent
   """
-  def __init__(self, stone):
-    super().__init__(stone)
+  def __init__(self, color):
+    super().__init__(color)
 
   def find_move(self, game_handler):
     player = game_handler.players[game_handler.current]
@@ -62,7 +62,7 @@ class MiniMaxAgent(Agent):
 
   Parameters
   ----------
-  stone: int
+  color: int
     The color of the stone of the Agent.
   depth: int
     The maximum depth of the tree for lookahead in the minimax algorithm.
@@ -71,8 +71,8 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, stone=1, depth=3, max_top_moves=2, simple_eval_depth=0):
-    super().__init__(stone)
+  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
+    super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
     self.debug = False
@@ -81,8 +81,8 @@ class MiniMaxAgent(Agent):
 
   def find_move(self, gh):
     # If empty, start with the center
-    if np.sum(gh.board.board) == 0:
-      return gh.size // 2, gh.size // 2
+    # if np.sum(gh.board.board) == 0:
+    #   return gh.size // 2, gh.size // 2
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
     # Find the list of best moves using this score map
@@ -176,11 +176,11 @@ class MiniMaxAgent(Agent):
       The estimated value of the current node (position) being evaluated.
     """
     return (simple_heuristic(position, color, my_turn) +
-            capture_heuristic(player, opponent, player.stone == self.stone))
+            capture_heuristic(player, opponent, player.color == self.color))
 
   def return_players(self, node, max_player):
     # current player depends on if we're maximizing
-    move_color = self.stone if max_player else opposite(self.stone)
+    move_color = self.color if max_player else opposite(self.color)
     return node.players[move_color - 1], node.players[opposite(move_color) - 1]
 
   def minimax(self, node, move, depth, max_player, tree=None, alpha=-np.inf,
@@ -209,10 +209,10 @@ class MiniMaxAgent(Agent):
     # start your estimation of the move by doing the move
     if not node.board.is_empty(*move):
       return -np.Inf
-    node.do_move(*move, player)
+    node.do_move(move, player)
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
-      val = self.evaluation(node.board.board, self.stone, 1 - max_player,
+      val = self.evaluation(node.board.board, self.color, 1 - max_player,
                             player, opponent)
     else:
       # using a sign to avoid two conditions in minimax
@@ -229,7 +229,7 @@ class MiniMaxAgent(Agent):
         if sign * (lim[1 - max_player] - val) >= 0:
           break
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
-    node.undo_last_move(player)
+    node.undo_move()
     return val
 
   def ab_memory(self, node, move, depth, max_player, tree=None,
@@ -269,10 +269,10 @@ class MiniMaxAgent(Agent):
     # start your estimation of the move by doing the move
     if not node.board.is_empty(*move):
       return -np.Inf
-    node.do_move(*move, player)
+    node.do_move(move, player)
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
-      val = self.evaluation(node.board.board, self.stone, 1 - max_player,
+      val = self.evaluation(node.board.board, self.color, 1 - max_player,
                             player, opponent)
     else:
       # using a sign to avoid two conditions in minimax
@@ -289,7 +289,7 @@ class MiniMaxAgent(Agent):
         if sign * (lim[1 - max_player] - val) >= 0:
           break
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
-    node.undo_last_move(player)
+    node.undo_move()
 
     n = type('obj', (object,), {'lowerbound': -np.inf, 'upperbound': np.inf})()
     if val <= alpha:

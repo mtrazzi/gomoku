@@ -168,14 +168,15 @@ class Visualizer(object):
           self.canvas.create_image(*offset, anchor="nw", image=stone)
 
     if len(self.gameHandler.move_history) > 0:
-      last_move = self.gameHandler.move_history[-1][::-1]
+      last_move, _ = self.gameHandler.move_history[-1]
+      last_move = last_move[::-1]
       offset = self.coords_to_pixel(last_move) + STONE_SIZE // 2
       radius = STONE_SIZE[0] // 2
       self.canvas.create_circle(*offset, radius, outline="white", width=2)
 
     global_msg = f"Turn {self.gameHandler.turn}"
     if self.gameHandler.winner is not None:  # FIXME This doesn't belong here
-      global_msg = f"P{self.gameHandler.winner.stone} won."
+      global_msg = f"P{self.gameHandler.winner.color} won."
       self.over = True
     self.load_texts(global_msg)
 

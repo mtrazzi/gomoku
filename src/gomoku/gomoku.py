@@ -7,12 +7,14 @@ from gomoku.bot import MiniMaxAgent, RandomAgent
 from gomoku.game_handler import GameHandler
 from gomoku.player import Player
 from gomoku.script import Script
+from gomoku.tiny import MiniMaxTiny
 from gomoku.visualizer import Visualizer
 
 AGENTS = {
   "human": Player,
   "minimax": MiniMaxAgent,
   "random": RandomAgent,
+  "tiny": MiniMaxTiny,
 }
 
 if __name__ == '__main__':
@@ -26,11 +28,11 @@ if __name__ == '__main__':
                       help="Heuristic function.")
   parser.add_argument('-p1', "--player1",
                       type=str, default="human",
-                      choices=["human", "random", "minimax"],
+                      choices=["human", "random", "minimax", "tiny"],
                       help="Choose Player 1 behaviour.")
   parser.add_argument('-p2', "--player2",
                       type=str, default="minimax",
-                      choices=["human", "random", "minimax"],
+                      choices=["human", "random", "minimax", "tiny"],
                       help="Choose Player 2 behaviour.")
   parser.add_argument('-s', "--script", type=str, default=None,
                       help="Text file to test sequence of moves.")

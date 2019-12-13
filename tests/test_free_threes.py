@@ -14,8 +14,7 @@ def eval_path(name):
 
 def game_handler(board_name):
   return GameHandler(board=Board(filename=eval_path(board_name)),
-                     players=[Player(1), Player(2)],
-                     rules=Rules())
+                     players=[Player(1), Player(2)])
 
 
 BLACK = 0
@@ -39,4 +38,4 @@ def test_double_threes(problem):
   board, player = game_handler.board, game_handler.players[BLACK]
   move = [move[0] - 1, move[1] - 1]
   game_handler.do_move(*move, player)
-  assert Rules().no_double_threes(board, player) == label
+  assert Rules.no_double_threes(board, player) == label

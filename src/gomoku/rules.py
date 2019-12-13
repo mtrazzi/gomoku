@@ -1,7 +1,6 @@
 import numpy as np
 
-from gomoku.heuristics import SLOPES
-from gomoku.utils import all_equal, coordinates
+from gomoku.utils import SLOPES, all_equal, coordinates
 
 
 class Rules(object):
@@ -42,12 +41,12 @@ class Rules(object):
       bounds = np.array([(x + dx * 3), (y + dy * 3)])
       if (bounds < [0, 0]).any() or (bounds >= [size, size]).any():
         continue
-      if not board.is_stone(*bounds, player):
+      if not board.is_stone(*bounds, player.color):
         continue
       stone1 = ((x + dx), (y + dy))
       stone2 = ((x + dx * 2), (y + dy * 2))
-      if not board.is_stone(*stone1, player)     \
-         and not board.is_stone(*stone2, player) \
+      if not board.is_stone(*stone1, player.color)     \
+         and not board.is_stone(*stone2, player.color) \
          and not board.is_empty(*stone1)         \
          and not board.is_empty(*stone2):
         captures += [stone1, stone2]
@@ -71,7 +70,7 @@ class Rules(object):
     x, y = player.last_move
     for dx, dy in SLOPES:
       for _x, _y in coordinates(x, y, -dx, -dy, 5):
-        if all_equal(coordinates(_x, _y, dx, dy, 5), board.board, player.stone):
+        if all_equal(coordinates(_x, _y, dx, dy, 5), board.board, player.color):
           return True
     return False
 
@@ -81,7 +80,7 @@ class Rules(object):
     for dx, dy in SLOPES:
       for _x, _y in coordinates(x, y, -dx, -dy, 5):
         coords = coordinates(_x, _y, dx, dy, 5)
-        if all_equal(coords, board.board, player.stone):
+        if all_equal(coords, board.board, player.color):
           return coords
     return []
 
@@ -101,7 +100,7 @@ class Rules(object):
         _x, _y = new_lst[i]
         if not board.is_empty(_x, _y):
           continue
-        board.place(_x, _y, player)
+        board.place(_x, _y, player.color)
         same = 0
         empty = 0
         for x, y in new_lst:
@@ -112,9 +111,9 @@ class Rules(object):
             elif same == 4:
               empty += 1
             break
-          elif board.is_stone(x, y, player):
+          elif board.is_stone(x, y, player.color):
             same += 1
-          elif not board.is_stone(x, y, player) and same == 0:
+          elif not board.is_stone(x, y, player.color) and same == 0:
             continue
           else:
             break
@@ -149,7 +148,7 @@ class Rules(object):
         coords = coordinates(_x, _y, dx, dy)
         for j in range(5):
           v, w = coords[j]
-          same += board.is_stone(v, w, player)
+          same += board.is_stone(v, w, player.color)
           free += board.is_empty(v, w)
         if free == 2 and same == 3:
           threes.append(coords)
