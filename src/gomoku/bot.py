@@ -178,7 +178,7 @@ class MiniMaxAgent(Agent):
     """
     return (simple_heuristic(position, color, my_turn) +
             capture_heuristic(player, opponent, player.color == self.color) +
-            past_heuristic(opponent.last_move, player.last_move))
+            (1 / 100) * past_heuristic(opponent.last_move, player.last_move))
 
   def return_players(self, node, max_player):
     # current player depends on if we're maximizing
