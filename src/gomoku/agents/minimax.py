@@ -37,15 +37,17 @@ class MiniMaxAgent(Agent):
       self.gameHandler.do_move(move, self)
       value = self.minimax(depth - 1, False)
       self.gameHandler.undo_move()
-      print(f"[{move} = {value}]", end=", ")
       if value >= bestMove:
         bestMove = value
         bestMoveFound = move
     return value, bestMoveFound
 
   def minimax(self, depth, maximizing):
-    if depth == 0 or is_node_terminal(self.gameHandler):
-      return heuristic(self.gameHandler, self.color, maximizing)
+    winner = is_node_terminal(self.gameHandler)
+    if depth == 0 or winner is not None:
+      if winner is None:
+        return heuristic(self.gameHandler, self.color, maximizing)
+      return np.Inf if winner == self else -np.Inf
     newGameMoves = generate_moves(self, depth, maximizing)
     if maximizing:
       value = -np.Inf

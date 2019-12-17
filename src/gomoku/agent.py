@@ -5,7 +5,7 @@ from gomoku.rules import Rules
 
 
 def is_node_terminal(gameHandler):
-  end = Rules.check_winner(gameHandler.board, gameHandler.players) is not None
+  end = Rules.check_winner(gameHandler.board, gameHandler.players)
   return end
 
 

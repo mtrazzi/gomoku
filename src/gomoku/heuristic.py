@@ -4,35 +4,35 @@ from gomoku.rules import Rules
 from gomoku.utils import SLOPES, boundaries, coordinates, get_player
 
 SCORE_MAP = {
-  'potential five': 0,
+  'potential five': 25,
   'no potential five': 0,
 
   'aligned <= 0': 0,
   'aligned == 1': 0,
-  'aligned == 2': 0,
-  'aligned == 3': 0,
-  'aligned == 4': 0,
-  'aligned >= 5': 0,
+  'aligned == 2': 25,
+  'aligned == 3': 250,
+  'aligned == 4': 500,
+  'aligned >= 5': 10000,
 
   'free <= 0': 0,
-  'free == 1': 0,
-  'free == 2': 0,
-  'free == 3': 0,
-  'free >= 4': 0,
+  'free == 1': 1,
+  'free == 2': 2,
+  'free == 3': 3,
+  'free >= 4': 4,
 
   'potential captures <= 0': 0,
-  'potential captures == 1': 0,
-  'potential captures >= 2': 0,
+  'potential captures == 1': 250,
+  'potential captures >= 2': 500,
 
   'captures <= 0': 0,
-  'captures <= 2': 0,
-  'captures <= 4': 0,
-  'captures <= 6': 0,
-  'captures <= 8': 0,
-  'captures >= 10': 0,
+  'captures <= 2': 500,
+  'captures <= 4': 1000,
+  'captures <= 6': 2500,
+  'captures <= 8': 5000,
+  'captures >= 10': 10000,
 
   'indefensibles <= 0': 0,
-  'indefensibles >= 1': 0,
+  'indefensibles >= 1': 1000,
 }
 
 
@@ -255,3 +255,16 @@ def heuristic(gameHandler, color, maximizing):
   score -= score_opponent(board, opponent)
   # score += score_past()
   return score
+
+
+# from gomoku.heuristics import (capture_heuristic, past_heuristic,
+#                                simple_heuristic)
+
+# def heuristic(gameHandler, color, maximizing):
+#   player = get_player(gameHandler, color, maximizing)
+#   opponent = get_player(gameHandler, color, not maximizing)
+#   board = gameHandler.board.board
+
+#   return (simple_heuristic(board, color, maximizing) +
+#           capture_heuristic(player, opponent, player.color == color) +
+#           (1 / 100) * past_heuristic(opponent.last_move, player.last_move))

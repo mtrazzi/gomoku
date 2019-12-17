@@ -118,19 +118,40 @@ def generate_adjacents(x, y, depth):
   return adjacents + [x, y]
 
 
+# def generate_moves(player, depth, maximizing):
+#   current = player if maximizing else player.opponent
+#   gameHandler = player.gameHandler
+#   children = []
+
+#   for x, y in select_past_moves(gameHandler.move_history, depth):
+#     coords = generate_adjacents(x, y, depth)
+#     for v, w in coords:
+#       if (v, w) not in children and gameHandler.can_place(v, w, current):
+#         children.append((v, w))
+#   if len(gameHandler.move_history) == 0:
+#     children.append((9, 9))
+#   if len(children) == 0:
+#     return [tuple(np.random.randint(19, size=2))]
+
+#   return children
+
+
 def generate_moves(player, depth, maximizing):
+  adjacent = np.array([(-1, -1), (-1, 0), (-1, 1), (0,  1),
+                       (1,   1), (1,  0), (1, -1), (0, -1)])
   current = player if maximizing else player.opponent
   gameHandler = player.gameHandler
+  board = gameHandler.board
+
   children = []
-
-  for x, y in select_past_moves(gameHandler.move_history, depth):
-    coords = generate_adjacents(x, y, depth)
-    for v, w in coords:
-      if (v, w) not in children and gameHandler.can_place(v, w, current):
-        children.append((v, w))
-  if len(gameHandler.move_history) == 0:
-    children.append((9, 9))
+  for x in range(board.size):
+    for y in range(board.size):
+      if board.is_empty(x, y):
+        continue
+      coords = adjacent + [x, y]
+      for v, w in coords:
+        if board.is_empty(v, w) and gameHandler.can_place(v, w, current):
+          children.append((v, w))
   if len(children) == 0:
-    return [tuple(np.random.randint(19, size=2))]
-
+    children.append((9, 9))
   return children
