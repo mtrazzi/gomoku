@@ -15,7 +15,7 @@ class Player(object):
   """
   def __init__(self, color):
     self.color = color
-    self.last_move = (-1, -1)
+    self.last_move = (-2, -2)
     self.captures = 0
     self.aligned_five_prev = False
     return

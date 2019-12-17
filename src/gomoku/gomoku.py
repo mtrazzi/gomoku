@@ -2,19 +2,24 @@
 
 import argparse
 
+from gomoku.agents import (AlphaBetaAgent, AlphaBetaMemAgent, MiniMaxAgent,
+                           MTDFAgent, NegaMaxAgent, PVSAgent)
 from gomoku.board import Board
-from gomoku.bot import MiniMaxAgent, RandomAgent
+from gomoku.bot import MiniMaxAgent as MiniMaxAgent2
 from gomoku.game_handler import GameHandler
 from gomoku.player import Player
 from gomoku.script import Script
-from gomoku.tiny import MiniMaxTiny
 from gomoku.visualizer import Visualizer
 
 AGENTS = {
   "human": Player,
-  "minimax": MiniMaxAgent,
-  "random": RandomAgent,
-  "tiny": MiniMaxTiny,
+  "minimax": MiniMaxAgent2,
+  "minimax+": MiniMaxAgent,
+  "negamax": NegaMaxAgent,
+  "pvs": PVSAgent,
+  "alphabeta": AlphaBetaAgent,
+  "alphabeta+": AlphaBetaMemAgent,
+  "mtdf": MTDFAgent,
 }
 
 if __name__ == '__main__':
@@ -28,11 +33,13 @@ if __name__ == '__main__':
                       help="Heuristic function.")
   parser.add_argument('-p1', "--player1",
                       type=str, default="human",
-                      choices=["human", "random", "minimax", "tiny"],
+                      choices=["human", "minimax", "minimax+", "negamax", "pvs",
+                               "alphabeta", "alphabeta+", "mtdf"],
                       help="Choose Player 1 behaviour.")
   parser.add_argument('-p2', "--player2",
-                      type=str, default="minimax",
-                      choices=["human", "random", "minimax", "tiny"],
+                      type=str, default="mtdf",
+                      choices=["human", "minimax", "minimax+", "negamax", "pvs",
+                               "alphabeta", "alphabeta+", "mtdf"],
                       help="Choose Player 2 behaviour.")
   parser.add_argument('-s', "--script", type=str, default=None,
                       help="Text file to test sequence of moves.")

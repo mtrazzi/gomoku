@@ -1,39 +1,10 @@
-from abc import abstractmethod
-
 from anytree import Node, RenderTree  # FIXME Remove this in the future -42
 import numpy as np
 
+from gomoku.agent import Agent
 from gomoku.heuristics import (capture_heuristic, past_heuristic,
                                simple_heuristic)
-from gomoku.player import Player
 from gomoku.utils import human_move, is_there_stones_around, opposite
-
-
-class Agent(Player):
-  """Class Agent. Abstract class for our gomoku bot.
-
-  Parameters
-  ----------
-  color: int
-    The color of the stone of the Agent.
-  """
-  def __init__(self, color):
-    super().__init__(color)
-
-  @abstractmethod
-  def find_move(self, game_handler) -> (int, int):
-    """Returns best move (x, y) given current board position.
-
-    Parameters
-    ----------
-    game_handler: GameHandler
-      The game handler corresponding to the current position.
-
-    Return
-    ------
-    (x,y): (int, int)
-      The best move according to Agent.
-    """
 
 
 class RandomAgent(Agent):
@@ -82,8 +53,9 @@ class MiniMaxAgent(Agent):
 
   def find_move(self, gh):
     # If empty, start with the center
-    # if np.sum(gh.board.board) == 0:
-    #   return gh.size // 2, gh.size // 2
+    if np.sum(gh.board.board) == 0:
+      return gh.size // 2, gh.size // 2
+
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
     # Find the list of best moves using this score map
@@ -123,7 +95,7 @@ class MiniMaxAgent(Agent):
     """
     gh, size = game_handler, game_handler.size
     score_map = np.full((size, size), -np.inf)
-    player = gh.players[gh.current]
+    # player = gh.players[gh.current]
     # opponent = gh.players[1 - gh.current]
     for x in range(size):
       for y in range(size):

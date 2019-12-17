@@ -1,6 +1,7 @@
 import time
 
-from gomoku.bot import Agent, MiniMaxAgent
+from gomoku.agent import Agent
+from gomoku.agents import MiniMaxAgent
 from gomoku.rules import Rules
 from gomoku.utils import is_there_stones_around
 
@@ -58,10 +59,10 @@ class GameHandler(object):
     """Reset all attributes to their initial states"""
     self.board.restart()
     self.players[0].captures = 0
-    self.players[0].last_move = (9, 9)
+    self.players[0].last_move = (-2, -2)
     self.players[0].aligned_five_prev = False
     self.players[1].captures = 0
-    self.players[1].last_move = (9, 9)
+    self.players[1].last_move = (-2, -2)
     self.players[1].aligned_five_prev = False
     if self.script:
       self.script.restart()
@@ -164,30 +165,17 @@ class GameHandler(object):
     return True
 
   def do_move(self, move, player):
-    x, y = move
-    if (x < 0 or x >= self.board.size or y < 0 or y >= self.board.size):
-      self.move_history.append([move, False])
-      return False
-    if not self.board.is_empty(*move):
-      self.move_history.append([move, False])
-      return False
-    self.board.place(*move, player.color)
-    player.last_move = move
-    if not Rules.no_double_threes(self.board, player):
-      self.board.remove(*move)
-      self.move_history.append([move, False])
-      return False
     self.state_history.append([player.last_move,
                                player.captures,
                                player.aligned_five_prev])
-    self.move_history.append([move, True])
+    self.board.place(*move, player.color)
+    player.last_move = move
+    self.move_history.append(move)
     self.capture_history.append(Rules.capture(self.board, player))
     return True
 
   def undo_move(self):
-    (x, y), succeed = self.move_history.pop()
-    if not succeed:
-      return self
+    x, y = self.move_history.pop()
     previous_dead = self.capture_history.pop()
     last_move, captures, aligned_five_prev = self.state_history.pop()
     stone = self.board.board[x][y]
@@ -200,40 +188,6 @@ class GameHandler(object):
     player.captures = captures
     player.aligned_five_prev = aligned_five_prev
     return self
-
-  # def do_move(self, x, y, player):
-  #   """Place stone at emplacement (x, y)
-
-  #   Parameters
-  #   ----------
-  #   x, y: int
-  #     Coordinates
-  #   player: Player
-  #     Current Player
-  #   """
-  #   self.board.place(x, y, player.color)
-  #   player.last_move = (x, y)
-  #   self.move_history.append((x, y))
-  #   self.capture_history.append(Rules.capture(self.board, player))
-  #   return self
-
-  # def undo_last_move(self, player):
-  #   """Undo previous move from player
-
-  #   Parameters
-  #   ----------
-  #   player: Player
-  #     Current Player
-  #   """
-  #   x, y = self.move_history.pop()
-  #   previous_dead = self.capture_history.pop()
-  #   if self.board.is_stone(x, y, player.color):
-  #     self.board.remove(x, y)
-  #   opponent = self.players[1 - self.players.index(player)]
-  #   for (x_0, y_0) in previous_dead:
-  #     self.board.place(x_0, y_0, opponent.color)
-  #     player.captures -= 1
-  #   return self
 
   def child(self, player):
     """

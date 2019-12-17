@@ -5,6 +5,7 @@ import pytest
 from gomoku.board import Board
 from gomoku.game_handler import GameHandler
 from gomoku.player import Player
+from gomoku.rules import Rules
 
 
 def eval_path(name):
@@ -36,4 +37,5 @@ def test_double_threes(problem):
   game_handler = NODES[board_name]
   player = game_handler.players[BLACK]
   move = [move[0] - 1, move[1] - 1]
-  assert game_handler.do_move(move, player) == label
+  game_handler.do_move(move, player)
+  assert Rules.no_double_threes(game_handler.board, player) == label

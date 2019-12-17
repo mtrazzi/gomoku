@@ -1,6 +1,6 @@
 import numpy as np
 
-from gomoku.utils import SLOPES, all_equal, coordinates
+from gomoku.utils import SLOPES, all_equal, coordinates, indefensible_four
 
 
 class Rules(object):
@@ -85,7 +85,7 @@ class Rules(object):
     return []
 
   @staticmethod
-  def check_double_threes(board, lst, player):
+  def check_double_threes(board, lst, color):
     threes = 0
     for l in lst:
       offset = l[0] - l[1]
@@ -95,32 +95,9 @@ class Rules(object):
         continue
       if (new_lst < [0, 0]).any():
         continue
+      threes += indefensible_four(board, new_lst, color)
 
-      for i in range(1, 6):
-        _x, _y = new_lst[i]
-        if not board.is_empty(_x, _y):
-          continue
-        board.place(_x, _y, player.color)
-        same = 0
-        empty = 0
-        for x, y in new_lst:
-          if board.is_empty(x, y):
-            if same == 0:
-              empty = 1
-              continue
-            elif same == 4:
-              empty += 1
-            break
-          elif board.is_stone(x, y, player.color):
-            same += 1
-          elif not board.is_stone(x, y, player.color) and same == 0:
-            continue
-          else:
-            break
-        if same >= 4 and empty >= 2:
-          threes += 1
-        board.remove(_x, _y)
-    return threes <= 1
+    return threes
 
   @staticmethod
   def no_double_threes(board, player):
@@ -157,7 +134,7 @@ class Rules(object):
           else:
             break
         i += 1
-    return Rules.check_double_threes(board, np.array(threes), player)
+    return Rules.check_double_threes(board, np.array(threes), player.color) <= 1
 
   @staticmethod
   def check_captures(board, player):

@@ -106,3 +106,4 @@ venv.bak/
 # code editor
 .vscode
 log
+tmp

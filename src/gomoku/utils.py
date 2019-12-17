@@ -55,13 +55,33 @@ def count_stones(position, color):
   return dict(zip(unique, counts))[color]
 
 
-def adjacent_coords(origin, delta=1):
-  coords = []
-  x, y = origin
-  for i in range(-delta, delta + 1):
-    for j in range(-delta, delta + 1):
-      coords.append((x + i, y + j))
-  return coords
+def indefensible_four(board, coords, color):
+  indefensibles = 0
+  for i in range(1, 6):
+    v, w = coords[i]
+    if not board.is_empty(v, w):
+      continue
+    board.place(v, w, color)
+    same = 0
+    empty = 0
+    for x, y in coords:
+      if board.is_empty(x, y):
+        if same == 0:
+          empty = 1
+          continue
+        elif same == 4:
+          empty += 1
+        break
+      elif board.is_stone(x, y, color):
+        same += 1
+      elif not board.is_stone(x, y, color) and same == 0:
+        continue
+      else:
+        break
+    if same >= 4 and empty >= 2:
+      indefensibles += 1
+    board.remove(v, w)
+  return indefensibles
 
 
 def get_player(gameHandler, color, maximizingPlayer):
@@ -71,27 +91,46 @@ def get_player(gameHandler, color, maximizingPlayer):
   return player if maximizingPlayer else opponent
 
 
-def generate_moves(gameHandler, color, maximizingPlayer):
-  player = get_player(gameHandler, color, maximizingPlayer)
+def select_past_moves(move_history, depth):
+  selected = 5
+  if depth >= 8:
+    selected = 1
+  elif depth >= 6:
+    selected = 2
+  elif depth >= 4:
+    selected = 3
+  elif depth >= 2:
+    selected = 4
+  return move_history[::-1][:selected]
 
-  # children = []
-  # for x in range(gameHandler.board.size):
-  #   for y in range(gameHandler.board.size):
-  #     if not is_there_stones_around(gameHandler.board.board, x, y):
-  #       continue
-  #     if gameHandler.can_place(x, y, player):
-  #       children.append((x, y))
-  # if len(children) == 0:
-  #   return [(9, 9)]
 
-  # return children[:2]
+def generate_adjacents(x, y, depth):
+  adjacents = np.array([(-1, -1), (-1, 0), (-1, 1), (0,  1),
+                        (1,   1), (1,  0), (1, -1), (0, -1)])
+  if depth >= 8:
+    adjacents = adjacents[2::4]
+  elif depth >= 6:
+    adjacents = adjacents[::4]
+  elif depth >= 4:
+    adjacents = adjacents[1::2]
+  elif depth >= 2:
+    adjacents = adjacents[::2]
+  return adjacents + [x, y]
 
-  board = gameHandler.board
-  children, _ = [], board.size
-  player = get_player(gameHandler, color, maximizingPlayer)
-  origin = player.last_move
-  coords = adjacent_coords(origin)
 
-  for x, y in coords:
-    children.append((x, y))
-  return children[:2]
+def generate_moves(player, depth, maximizing):
+  current = player if maximizing else player.opponent
+  gameHandler = player.gameHandler
+  children = []
+
+  for x, y in select_past_moves(gameHandler.move_history, depth):
+    coords = generate_adjacents(x, y, depth)
+    for v, w in coords:
+      if (v, w) not in children and gameHandler.can_place(v, w, current):
+        children.append((v, w))
+  if len(gameHandler.move_history) == 0:
+    children.append((9, 9))
+  if len(children) == 0:
+    return [tuple(np.random.randint(19, size=2))]
+
+  return children

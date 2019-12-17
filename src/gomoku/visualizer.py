@@ -4,7 +4,7 @@ import tkinter as tk
 from PIL import Image, ImageEnhance, ImageTk
 import numpy as np
 
-from gomoku.bot import Agent
+from gomoku.agent import Agent
 
 WINDOW_WIDTH = 850
 WINDOW_SIZE = np.array([WINDOW_WIDTH, WINDOW_WIDTH])
@@ -168,7 +168,7 @@ class Visualizer(object):
           self.canvas.create_image(*offset, anchor="nw", image=stone)
 
     if len(self.gameHandler.move_history) > 0:
-      last_move, _ = self.gameHandler.move_history[-1]
+      last_move = self.gameHandler.move_history[-1]
       last_move = last_move[::-1]
       offset = self.coords_to_pixel(last_move) + STONE_SIZE // 2
       radius = STONE_SIZE[0] // 2
@@ -223,7 +223,9 @@ class Visualizer(object):
           return
 
       self.load_board()
-      self.input = True
+      player = self.gameHandler.players[self.gameHandler.current]
+      if not isinstance(player, Agent):
+        self.input = True
 
     self.root.after(1, self.start)
 
