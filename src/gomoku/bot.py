@@ -1,7 +1,8 @@
 from anytree import Node, RenderTree  # FIXME Remove this in the future -42
 import numpy as np
+import time
 
-from gomoku.agent import Agent
+from gomoku.agent import Agent, is_node_terminal
 from gomoku.heuristics import (capture_heuristic, past_heuristic,
                                simple_heuristic)
 from gomoku.utils import human_move, is_there_stones_around, opposite
@@ -43,16 +44,22 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, color=1, depth=5, max_top_moves=2, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
     self.debug = False
     self.simple_eval_depth = simple_eval_depth
     self.table = {}
+    self.time_limit = 0.5
+
+  def child(self, gh):
+    return self.best_moves(self.simple_evaluation(gh))
 
   def find_move(self, gh):
+    print("entering find move")
     # If empty, start with the center
+    total_start = time.time()
     if np.sum(gh.board.board) == 0:
       return gh.size // 2, gh.size // 2
 
@@ -66,9 +73,11 @@ class MiniMaxAgent(Agent):
     # values = [self.minimax(gh, coord, self.depth - 1, True)
               # for coord in candidates]
     for coord in candidates:
+      print("evaluating candidate")
       tree = Node(coord, val=0)
       # values.append(self.ab_memory(gh, coord, self.depth - 1, True, tree))
-      values.append(self.mtdf(gh, coord, self.depth - 1, tree))
+      # values.append(self.mtdf(gh, coord, self.depth - 1, tree))
+      values.append(self.iterative_deepening(gh, coord))
       tree_list.append(tree)
     if self.debug:
       print(gh.board)
@@ -78,7 +87,18 @@ class MiniMaxAgent(Agent):
         for pre, _, node in RenderTree(tree):
           print("%s%s (val = %2d)" % (pre, human_move(node.name), node.val))
     # return the best candidate
+    print(f"total time is {time.time()-total_start}s")
     return candidates[np.argmax(values)]
+
+  def iterative_deepening(self, game_handler, coord):
+    start = time.time()
+    value = 0
+    for depth in range(self.depth - 1):
+      # print(f"depth is {depth} and diff time is {time.time() - start}")
+      if time.time() - start >= (self.time_limit / 1000):
+        return value
+      value = self.mtdf(game_handler, coord, depth)
+    return value
 
   def simple_evaluation(self, game_handler):
     """Returns a score map for possible moves using a depth = 1 evaluation.
@@ -229,6 +249,8 @@ class MiniMaxAgent(Agent):
     """
     # tests if already seen node (that's why it's called "with memory")
     # cf. https://people.csail.mit.edu/plaat/mtdf.html#abmem
+    if is_node_terminal(node):
+      return np.inf if max_player else -np.inf
     node_id = hash(node.board.board.tostring())
     if node_id in self.table:
       n = self.table[node_id]
@@ -253,7 +275,7 @@ class MiniMaxAgent(Agent):
       sign = 1 if max_player else -1
       val = sign * np.inf
       lim = [alpha, beta]
-      for new_move in node.child(player):
+      for new_move in self.child(node):
         new_tree = Node(new_move, parent=tree, val=0)
         val = sign * min(sign * val,
                          sign * self.minimax(node, new_move, depth - 1,
@@ -279,11 +301,13 @@ class MiniMaxAgent(Agent):
   def mtdf(self, node, move, depth, tree=None, f=0):
     """cf. https://en.wikipedia.org/wiki/MTD-f"""
     g, lower_bound, upper_bound = f, -np.inf, np.inf
-    while lower_bound < upper_bound:
+    counter = 0
+    while lower_bound < upper_bound and counter < 10:
         beta = max(g, lower_bound + 1)
         g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)
         if g < beta:
           upper_bound = g
         else:
           lower_bound = g
+        counter += 1
     return g

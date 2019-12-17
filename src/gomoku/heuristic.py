@@ -6,14 +6,12 @@ from gomoku.utils import SLOPES, boundaries, coordinates, get_player
 SCORE_MAP = {
   'potential five': 25,
   'no potential five': 0,
-
   'aligned <= 0': 0,
   'aligned == 1': 0,
   'aligned == 2': 25,
   'aligned == 3': 250,
   'aligned == 4': 500,
   'aligned >= 5': 10000,
-
   'free <= 0': 0,
   'free == 1': 1,
   'free == 2': 2,
@@ -30,7 +28,6 @@ SCORE_MAP = {
   'captures <= 6': 2500,
   'captures <= 8': 5000,
   'captures >= 10': 10000,
-
   'indefensibles <= 0': 0,
   'indefensibles >= 1': 1000,
 }

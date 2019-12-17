@@ -24,7 +24,7 @@ class MiniMaxAgent(Agent):
     move = None
     for depth in range(1, self.depth):
       _, move = self.minimaxRoot(depth)
-      if time.time() - begin >= 0.5:
+      if time.time() - begin >= 0.05:
         break
     return move
 

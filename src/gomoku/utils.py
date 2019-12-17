@@ -142,7 +142,6 @@ def generate_moves(player, depth, maximizing):
   current = player if maximizing else player.opponent
   gameHandler = player.gameHandler
   board = gameHandler.board
-
   children = []
   for x in range(board.size):
     for y in range(board.size):
