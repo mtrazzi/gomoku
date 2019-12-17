@@ -44,7 +44,7 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=5, max_top_moves=2, simple_eval_depth=0):
+  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
@@ -93,8 +93,8 @@ class MiniMaxAgent(Agent):
   def iterative_deepening(self, game_handler, coord):
     start = time.time()
     value = 0
-    for depth in range(self.depth - 1):
-      # print(f"depth is {depth} and diff time is {time.time() - start}")
+    for depth in range(self.depth):
+      print(f"depth is {depth} and diff time is {time.time() - start}")
       if time.time() - start >= (self.time_limit / 1000):
         return value
       value = self.mtdf(game_handler, coord, depth)
@@ -170,7 +170,7 @@ class MiniMaxAgent(Agent):
     """
     return (simple_heuristic(position, color, my_turn) +
             capture_heuristic(player, opponent, player.color == self.color) +
-            (1 / 100) * past_heuristic(opponent.last_move, player.last_move))
+            (1 / 100) * past_heuristic(opponent.last_move, player.last_move)) * 1e-12
 
   def return_players(self, node, max_player):
     # current player depends on if we're maximizing
@@ -249,8 +249,8 @@ class MiniMaxAgent(Agent):
     """
     # tests if already seen node (that's why it's called "with memory")
     # cf. https://people.csail.mit.edu/plaat/mtdf.html#abmem
-    if is_node_terminal(node):
-      return np.inf if max_player else -np.inf
+    # if is_node_terminal(node):
+    #   return np.inf if max_player else -np.inf
     node_id = hash(node.board.board.tostring())
     if node_id in self.table:
       n = self.table[node_id]
@@ -301,13 +301,11 @@ class MiniMaxAgent(Agent):
   def mtdf(self, node, move, depth, tree=None, f=0):
     """cf. https://en.wikipedia.org/wiki/MTD-f"""
     g, lower_bound, upper_bound = f, -np.inf, np.inf
-    counter = 0
-    while lower_bound < upper_bound and counter < 10:
+    while lower_bound < upper_bound:
         beta = max(g, lower_bound + 1)
         g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)
         if g < beta:
           upper_bound = g
         else:
           lower_bound = g
-        counter += 1
     return g

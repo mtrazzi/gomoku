@@ -4,17 +4,13 @@ import numpy as np
 
 from gomoku.agent import Agent, is_node_terminal
 from gomoku.heuristic import heuristic
-from gomoku.utils import generate_moves, get_player
+from gomoku.moves import generate_moves
+from gomoku.utils import get_player
 
 
 class MiniMaxAgent(Agent):
   def __init__(self, color=1, depth=10):
-    super().__init__(color)
-    self.last_move = (9, 9)
-    self.depth = depth
-    self.gameHandler = None
-    self.opponent = None
-    self.nodes = {}
+    super().__init__(color, depth)
 
   def find_move(self, gameHandler):
     begin = time.time()
@@ -24,7 +20,7 @@ class MiniMaxAgent(Agent):
     move = None
     for depth in range(1, self.depth):
       _, move = self.minimaxRoot(depth)
-      if time.time() - begin >= 0.05:
+      if time.time() - begin >= 0.5:
         break
     return move
 

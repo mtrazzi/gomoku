@@ -4,17 +4,13 @@ import numpy as np
 
 from gomoku.agent import Agent, Node, is_node_terminal
 from gomoku.heuristic import heuristic
-from gomoku.utils import generate_moves, get_player
+from gomoku.moves import generate_moves
+from gomoku.utils import get_player
 
 
 class AlphaBetaMemAgent(Agent):
   def __init__(self, color=1, depth=10):
-    super().__init__(color)
-    self.last_move = (9, 9)
-    self.depth = depth
-    self.gameHandler = None
-    self.opponent = None
-    self.nodes = {}
+    super().__init__(color, depth)
 
   def find_move(self, gameHandler):
     begin = time.time()
@@ -70,8 +66,12 @@ class AlphaBetaMemAgent(Agent):
       α = max(α, n.lowerbound)
       β = min(β, n.upperbound)
 
-    if depth == 0 or is_node_terminal(self.gameHandler):
-      g = heuristic(self.gameHandler, self.color, True)
+    winner = is_node_terminal(self.gameHandler)
+    if depth == 0 or winner is not None:
+      if winner is None:
+        g = heuristic(self.gameHandler, self.color, maximizing)
+      else:
+        g = np.Inf if winner == self else -np.Inf
     elif maximizing:
       g = -np.Inf
       a = α
@@ -120,7 +120,7 @@ class MTDFAgent(AlphaBetaMemAgent):
     value, move = 0, None
     for depth in range(1, self.depth):
       value, move = self.mtdf(depth, value)
-      if time.time() - begin >= 1:
+      if time.time() - begin >= 0.5:
         break
     return move
 

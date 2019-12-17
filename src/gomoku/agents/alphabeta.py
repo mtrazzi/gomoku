@@ -4,17 +4,13 @@ import numpy as np
 
 from gomoku.agent import Agent, is_node_terminal
 from gomoku.heuristic import heuristic
-from gomoku.utils import generate_moves, get_player
+from gomoku.moves import generate_moves
+from gomoku.utils import get_player
 
 
 class AlphaBetaAgent(Agent):
   def __init__(self, color=1, depth=10):
-    super().__init__(color)
-    self.last_move = (9, 9)
-    self.depth = depth
-    self.gameHandler = None
-    self.opponent = None
-    self.nodes = {}
+    super().__init__(color, depth)
 
   def find_move(self, gameHandler):
     begin = time.time()
@@ -24,7 +20,7 @@ class AlphaBetaAgent(Agent):
     move = None
     for depth in range(1, self.depth):
       _, move = self.alphabetaRoot(depth, -np.Inf, np.Inf)
-      if time.time() - begin >= 1:
+      if time.time() - begin >= 0.5:
         break
     return move
 
@@ -48,8 +44,11 @@ class AlphaBetaAgent(Agent):
     return value, bestMoveFound
 
   def alphabeta(self, depth, α, β, maximizing):
-    if depth == 0 or is_node_terminal(self.gameHandler):
-      return heuristic(self.gameHandler, self.color, maximizing)
+    winner = is_node_terminal(self.gameHandler)
+    if depth == 0 or winner is not None:
+      if winner is None:
+        return heuristic(self.gameHandler, self.color, maximizing)
+      return np.Inf if winner == self else -np.Inf
     newGameMoves = generate_moves(self, depth, maximizing)
     if maximizing:
       value = -np.Inf

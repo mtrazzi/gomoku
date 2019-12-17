@@ -238,6 +238,18 @@ def score_past():
   return score
 
 
+def move_heuristic(board, x, y, player, opponent):
+  score = 0
+  score += score_alignements(board, x, y, player.color)
+  score += score_potential_alignment_win(board, x, y, player.color)
+  score += score_potential_captures(board, x, y, player.color)
+  score += score_captures(player)
+  score += score_figures(board, x, y, player.color)
+  score -= score_opponent(board, opponent)
+  # score += score_past()
+  return score
+
+
 def heuristic(gameHandler, color, maximizing):
   player = get_player(gameHandler, color, maximizing)
   opponent = get_player(gameHandler, color, not maximizing)

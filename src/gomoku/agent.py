@@ -23,8 +23,13 @@ class Agent(Player):
   color: int
     The color of the stone of the Agent.
   """
-  def __init__(self, color):
+  def __init__(self, color=1, depth=10):
     super().__init__(color)
+    self.last_move = (9, 9)
+    self.depth = depth
+    self.gameHandler = None
+    self.opponent = None
+    self.nodes = {}
 
   def find_move(self, gameHandler):
     """Returns best move (x, y) given current board position.
