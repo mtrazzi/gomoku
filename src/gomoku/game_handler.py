@@ -220,7 +220,7 @@ class GameHandler(object):
     representation += f"X: {self.players[0].captures} stone captured\n"
     representation += f"O: {self.players[1].captures} stone captured\n"
     if self.begin > 0:
-      representation += f"\nMove took {time.time() - self.begin}s, so fast!"
+      representation += f"Last move took {time.time() - self.begin}s\n"
     if len(self.error) != 0 and isinstance(player, Agent):
       representation += f"{self.error}"
     self.error = ""
