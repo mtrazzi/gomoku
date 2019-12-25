@@ -79,15 +79,55 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
   return ends
 
 
-def score_for_color(position, stones_color, my_turn):
-  """Looking only at the stones of color `stones_color`, and knowing that it's
+def is_this_a_threat(x, y, dx, dy, position, color):
+  """Checks if there is a pattern of OOO.O or .OO.O. or .O.OO. with a threat to
+  play on a middle . where the color of stones "O" is `color` in the board
+  position `position`,starting from (x, y) and using slope (dx, dy).
+
+  Parameters
+  ----------
+  x: int
+    x-coordinate of the start position
+  y: int
+    x-coordinate of the start position
+  dx: int
+    x-coordinate slope
+  dy: int
+    y-coordinate slope
+  position: numpy.ndarray
+    position of the board
+  color:
+    what color are the stones of the threat
+  """
+  if not (0 <= x + 4 * dx < len(position) and 0 <= y + 4 * dy < len(position)):
+    return False
+  # case of OOO.O
+  nb_cons = nb_consecutives(x, y, dx, dy, position, color)
+  if (nb_cons == 3 and position[x + 3 * dx][y + 3 * dy] == 0 and
+          position[x + 4 * dx][y + 4 * dy] == color):
+    return True
+  # checks that coordinates of possible open ends match with borders
+  if not (0 <= x - dx < len(position) and 0 <= y - dy < len(position) and
+          0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
+    return False
+  c = coordinates(x, y, dx, dy, 6)
+  # check open ends are free and then there are some stones next to them
+  c_1, c_2, c_3, c_4, c_5, c_6 = [position[c[i][0]][c[i][1]] for i in range(6)]
+  if not (c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color):
+    return False
+  # checks if it's .OO.O. or .O.OO.
+  return (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)
+
+
+def score_for_color(position, color, my_turn):
+  """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
 
   Parameters
   ----------
   position: numpy.ndarray
     Position of the board
-  stones_color: int
+  color: int
     Color of the stones we're looking at
   my_turn: bool
     Is it my turn or not? Something to take into account when evaluating board.
@@ -101,14 +141,16 @@ def score_for_color(position, stones_color, my_turn):
   winning_groups = 0
   for x in range(len(position)):
     for y in range(len(position)):
-      if not position[x][y]:
-        continue
       for (dx, dy) in SLOPES:
-        nb_cons = nb_consecutives(x, y, dx, dy, position, stones_color)
+        threat = is_this_a_threat(x, y, dx, dy, position, color)
+        tot += threat * (1e10 if my_turn else 5e1)
+        if not position[x][y]:
+          continue
+        nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
           can_five = possible_five(position, x, y, dx, dy, nb_cons,
-                                   stones_color)
+                                   color)
           tot += score(nb_cons, op_ends, my_turn) * (10 * can_five + 1)
           winning_groups += winning_stones(nb_cons, op_ends)
   return tot + advantage_combinations(winning_groups)
