@@ -73,7 +73,6 @@ class MiniMaxAgent(Agent):
     # values = [self.minimax(gh, coord, self.depth - 1, True)
               # for coord in candidates]
     for coord in candidates:
-      print("evaluating candidate")
       tree = Node(coord, val=0)
       # values.append(self.ab_memory(gh, coord, self.depth - 1, True, tree))
       # values.append(self.mtdf(gh, coord, self.depth - 1, tree))
@@ -115,13 +114,12 @@ class MiniMaxAgent(Agent):
     """
     gh, size = game_handler, game_handler.size
     score_map = np.full((size, size), -np.inf)
-    # player = gh.players[gh.current]
-    # opponent = gh.players[1 - gh.current]
+    player, _ = self.return_players(gh, True)
     for x in range(size):
       for y in range(size):
         # only do moves that are near current stones
         if (not is_there_stones_around(gh.board.board, x, y) or
-           (not gh.board.is_empty(x, y))):
+           (not gh.can_place(x, y, player))):
           continue
         # select top max_moves_checked moves with evaluation of depth one
           # score_map[x][y] = self.ab_memory(gh, (x, y), self.simple_eval_depth, True)
@@ -147,6 +145,8 @@ class MiniMaxAgent(Agent):
                                       score_map.shape)
       top_move_list.append((x_max, y_max))
       score_map[x_max][y_max] = -np.inf
+    # np.set_printoptions(linewidth=np.inf, precision=4)
+    # print(score_map)
     return top_move_list
 
   def evaluation(self, position, color, my_turn, player, opponent):
