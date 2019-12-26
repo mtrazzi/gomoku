@@ -1,5 +1,5 @@
 import numpy as np
-
+import sys
 
 class Board(object):
   """Class Board
@@ -70,12 +70,15 @@ class Board(object):
     try:
       inv_cmap = {v: k for k, v in self.cmap.items()}
       inv_cmap['*'] = 0
-      with open(file, 'r') as f:
+      if file == "custom":
+        raw = [line.rstrip().split() for line in sys.stdin]
+      else:
+        f = open(file, 'r')
         raw = [line.strip().split() for line in f]
-        board = [l[1:] for l in raw[1:]]
-        for i in range(self.size):
-          for j in range(self.size):
-            self.board[i][j] = inv_cmap[board[i][j]]
+      board = [l[1:] for l in raw[1:]]
+      for i in range(self.size):
+        for j in range(self.size):
+          self.board[i][j] = inv_cmap[board[i][j]]
     except Exception:
       print("Error encountered while parsing board, starting with empty board.")
       self.board = np.zeros((self.size, self.size))
