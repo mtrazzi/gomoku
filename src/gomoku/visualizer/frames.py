@@ -7,11 +7,13 @@ class Frames(object):
   def __init__(self, root,
                restartCallback=None,
                helpCallback=None,
-               quitCallback=None):
+               quitCallback=None,
+               undoCallback=None):
     self.root = root
     self.restartCallback = restartCallback
     self.helpCallback = helpCallback
     self.quitCallback = quitCallback
+    self.undoCallback = undoCallback
 
     self.load_frames()
     self.load_buttons()
@@ -58,16 +60,20 @@ class Frames(object):
 
   def load_buttons(self):
     """Load tk.Buttons"""
-    btn_config = {'width': 10, 'height': 2, 'font': FONT}
+    btn_config = {'width': 8, 'height': 2, 'font': FONT}
 
-    r_btn = tk.Button(self.top_frame, text="Restart")
+    r_btn = tk.Button(self.bottom_frame, text="Restart")
     r_btn.configure(command=self.restartCallback, **btn_config)
-    r_btn.place(relx=0.5, rely=0.35, anchor='center')
+    r_btn.place(relx=0.35, rely=0.5, anchor='s')
+
+    u_btn = tk.Button(self.bottom_frame, text="Undo")
+    u_btn.configure(command=self.undoCallback, **btn_config)
+    u_btn.place(relx=0.45, rely=0.5, anchor='s')
 
     h_btn = tk.Button(self.bottom_frame, text="Help!")
     h_btn.configure(command=self.helpCallback, **btn_config)
-    h_btn.place(relx=0.3, rely=0.5, anchor='sw')
+    h_btn.place(relx=0.55, rely=0.5, anchor='s')
 
     q_btn = tk.Button(self.bottom_frame, text="Quit")
     q_btn.configure(command=self.quitCallback, **btn_config)
-    q_btn.place(relx=0.7, rely=0.5, anchor='se')
+    q_btn.place(relx=0.65, rely=0.5, anchor='s')

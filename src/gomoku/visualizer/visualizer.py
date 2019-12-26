@@ -47,7 +47,8 @@ class Visualizer(object):
     self.frames = Frames(self.root,
                          restartCallback=self.OnRestartPressed,
                          helpCallback=self.OnHelpPressed,
-                         quitCallback=self.OnQuitPressed)
+                         quitCallback=self.OnQuitPressed,
+                         undoCallback=self.OnUndoPressed)
     self.canvas = Canvas(self.frames.canvas_frame,
                          readyForInput=self.readyForInput,
                          mouseDownCallback=self.OnMouseDown)
@@ -151,3 +152,12 @@ class Visualizer(object):
       return
     self.move = self.gameHandler.move_help()
     self.playerInput = False
+  
+  def OnUndoPressed(self):
+    """Undo Button callback"""
+    if not self.readyForInput():
+      return
+    for _ in range(2):
+      self.gameHandler.undo_move()
+    self.playerInput = False
+    self.canvas.load_board(self.gameHandler)
