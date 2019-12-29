@@ -1,6 +1,7 @@
 from anytree import Node, RenderTree  # FIXME Remove this in the future -42
 import numpy as np
 import time
+import copy
 
 from gomoku.agent import Agent, is_node_terminal
 from gomoku.heuristics import (capture_heuristic, past_heuristic,
@@ -44,7 +45,7 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, color=1, depth=1, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
@@ -52,6 +53,8 @@ class MiniMaxAgent(Agent):
     self.simple_eval_depth = simple_eval_depth
     self.table = {}
     self.time_limit = 0.5
+    self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
+    self.color_scores_dict = {}
 
   def child(self, gh):
     return self.best_moves(self.simple_evaluation(gh))
@@ -60,20 +63,28 @@ class MiniMaxAgent(Agent):
     # If empty, start with the center
     if np.sum(gh.board.board) == 0:
       return gh.size // 2, gh.size // 2
+    # np.set_printoptions(linewidth=np.inf, precision=0)
+    # print(self.color_scores[0])
+    # print(self.color_scores[1])
 
+    start = time.time()
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
+    print(f"time for simple evaluation: {time.time() - start}s")
     # Find the list of best moves using this score map
     candidates = self.best_moves(score_map)
     values = [self.iterative_deepening(gh, coord) for coord in candidates]
     # return the best candidate
-    return candidates[np.argmax(values)]
+    move_to_play = candidates[np.argmax(values)]
+    self.color_scores = self.color_scores_dict[move_to_play]
+    print(f"total time: {time.time() - start}s")
+    return move_to_play
 
   def iterative_deepening(self, game_handler, coord):
     start = time.time()
     value = 0
     for depth in range(self.depth):
-      if time.time() - start >= (self.time_limit / 10000):
+      if time.time() - start >= (self.time_limit / 100000):
         return value
       # value = self.mtdf(game_handler, coord, depth)
       value = self.ab_memory(game_handler, coord, depth)
@@ -95,14 +106,24 @@ class MiniMaxAgent(Agent):
     gh, size = game_handler, game_handler.size
     score_map = np.full((size, size), -np.inf)
     player, opponent = self.return_players(gh, True)
+    beginning = time.time()
+    tot_ab_mem = 0
+    count = 0
     for x in range(size):
       for y in range(size):
         # only do moves that are near current stones
         if (not is_there_stones_around(gh.board.board, x, y) or
            (not gh.can_place(x, y, player))):
           continue
+        # only change the score map if close enough to last move played
         # select top max_moves_checked moves with evaluation of depth one
-        score_map[x][y] = self.ab_memory(gh, (x,y), 0)
+        start = time.time()
+        score_map[x][y] = self.ab_memory(gh, (x, y), 0)
+        dt = time.time() - start
+        count += 1
+        tot_ab_mem += dt
+    # print(f"average time for computing one move: {tot_ab_mem/count} ({count} moves)")
+    # print(f"total simple_evaluation time: {time.time()-beginning}")
     return score_map
 
   def best_moves(self, score_map):
@@ -145,9 +166,9 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    return (simple_heuristic(position, color, my_turn) +
-            capture_heuristic(player, opponent, player.color == self.color) +
-            (1 / 100) * past_heuristic(opponent.last_move, player.last_move)) * 1e-12
+    score_simple_heuristic, new_color_scores = simple_heuristic(position, color,my_turn, player.last_move, copy.deepcopy(self.color_scores))
+    self.color_scores_dict[player.last_move] = new_color_scores
+    return (score_simple_heuristic + capture_heuristic(player, opponent, player.color == self.color) + (1 / 100) * past_heuristic(opponent.last_move, player.last_move)) * 1e-12
 
   def return_players(self, node, max_player):
     # current player depends on if we're maximizing

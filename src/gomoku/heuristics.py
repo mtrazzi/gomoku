@@ -1,16 +1,7 @@
 import numpy as np
+import time
 
-from gomoku.utils import SLOPES, all_equal, coordinates, opposite
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+from gomoku.utils import SLOPES, all_equal, coordinates, opposite, can_impact
 
 SCORE = {
   'XXXXX': 1e16,
@@ -31,6 +22,7 @@ SCORE = {
   'OXX.': -1e4,
   'XOO.': -1e8,
   'multiple_threats': 1e8,
+  'stone_captured': 1e8,
 }
 
 
@@ -134,24 +126,20 @@ def is_this_a_threat(x, y, dx, dy, position, color):
     return False
   if not (0 <= x + 4 * dx < len(position) and 0 <= y + 4 * dy < len(position)):
     return False
-  # case of OOO.O
-  nb_cons = nb_consecutives(x, y, dx, dy, position, color)
-  if (nb_cons == 3 and position[x + 3 * dx][y + 3 * dy] == 0 and
-          position[x + 4 * dx][y + 4 * dy] == color):
-    return True
-  # case of O.OOO
-  if (nb_cons == 1 and position[x + 2 * dx][y + 2 * dy] == position[x + 3 * dx][y + 3 * dy] == position[x + 4 * dx][y + 4 * dy] == color and position[x + dx][y + dy] == 0):
+  c = coordinates(x, y, dx, dy, 6)
+  c_1, c_2, c_3, c_4, c_5 = [position[c[i][0]][c[i][1]] for i in range(5)]
+  # case of OOO.O and 0.000
+  if ((c_1 == c_2 == c_3 == c_5 == color and c_4 == 0) or
+      (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0)):
     return True
   # checks that coordinates of possible open ends match with borders
   if not (0 <= x - dx < len(position) and 0 <= y - dy < len(position) and
           0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
     return False
-  c = coordinates(x, y, dx, dy, 6)
-  # check open ends are free and then there are some stones next to them
-  c_1, c_2, c_3, c_4, c_5, c_6 = [position[c[i][0]][c[i][1]] for i in range(6)]
+  c_6 = position[c[5][0]][c[5][1]]
   if not (c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color):
     return False
-  # checks if it's .OO.O. or .O.OO.
+  # case of .OO.O. or .O.OO.
   return (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)
 
 
@@ -161,7 +149,7 @@ def threat_score(x, y, dx, dy, position, color, my_turn):
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
 
-def score_for_color(position, color, my_turn):
+def score_for_color(position, color, my_turn, last_move, past_scores):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
 
@@ -173,6 +161,8 @@ def score_for_color(position, color, my_turn):
     Color of the stones we're looking at
   my_turn: bool
     Is it my turn or not? Something to take into account when evaluating board.
+  last_move: (int, int)
+    The last move played.
 
   Return
   ------
@@ -183,21 +173,25 @@ def score_for_color(position, color, my_turn):
   winning_groups = 0
   for x in range(len(position)):
     for y in range(len(position)):
-      if not position[x][y]:
+      dtot = 0
+      if not position[x][y] or not can_impact(last_move, x, y):
+        tot += past_scores[x][y]
         continue
       for (dx, dy) in SLOPES:
-        tot += threat_score(x, y, dx, dy, position, color, my_turn)
+        dtot += threat_score(x, y, dx, dy, position, color, my_turn)
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
           can_five = possible_five(position, x, y, dx, dy, nb_cons,
                                    color)
-          tot += score(nb_cons, op_ends, my_turn) * (10 * can_five + 1)
+          dtot += score(nb_cons, op_ends, my_turn) * (10 * can_five + 1)
           winning_groups += winning_stones(nb_cons, op_ends)
-  return tot + advantage_combinations(winning_groups)
+      tot += dtot
+      past_scores[x][y] = dtot
+  return tot + advantage_combinations(winning_groups), past_scores
 
 
-def simple_heuristic(position, color, my_turn):
+def simple_heuristic(position, color, my_turn, last_move, past_scores):
   """Evaluation function used for estimating the value of a node in minimax.
 
   Parameters
@@ -208,16 +202,18 @@ def simple_heuristic(position, color, my_turn):
     The color of of the stones for the first score.
   my_turn: bool
     Is it my turn or not? Something to take into account when evaluating board.
+  last_move: (int, int)
+    The last move played.
 
   Return
   ------
   score: int
     How the situation looks like taking into account the two players.
   """
-  first_score = score_for_color(position, color, my_turn)
-  second_score = score_for_color(position, opposite(color), not my_turn)
+  first_score, new_past_scores_1 = score_for_color(position, color, my_turn, last_move, past_scores[0])
+  second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, last_move, past_scores[1])
   # print(f"{first_score:2E}-{second_score:2E}")
-  return (first_score - second_score)
+  return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 
 def capture_heuristic(player, opponent, our_stones):
@@ -241,7 +237,7 @@ def capture_heuristic(player, opponent, our_stones):
     return np.inf
   sign = 1 if our_stones else -1
   diff = player.captures - opponent.captures
-  return sign * diff * 1e8
+  return sign * diff * SCORE['stone_captured']
 
 
 def past_heuristic(last_move, current_move):
