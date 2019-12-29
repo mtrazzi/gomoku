@@ -2,6 +2,37 @@ import numpy as np
 
 from gomoku.utils import SLOPES, all_equal, coordinates, opposite
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+SCORE = {
+  'XXXXX': 1e16,
+  'OXXXX.': 1e12,
+  'XXX.X': 1e12,
+  'OOO.O': 1e1,
+  '.XXXX.': 1e12,
+  '.OOOO.': 1e11,
+  '.XXX.': 1e10,
+  '.OOO.': 5e4,
+  'OXXX.': 1e2,
+  'XOOOO.': 1e1,
+  'XOOO.': 1e1,
+  '.XX.': 5,
+  '.X.': 1,
+  'OX.': 0.5,
+  'no open ends': 0,
+  'OXX.': -1e4,
+  'XOO.': -1e8,
+  'multiple_threats': 1e8,
+}
+
 
 def nb_consecutives(x, y, dx, dy, position, color):
   """Maximum number of consecutive stones of color `color` in the board position
@@ -99,12 +130,17 @@ def is_this_a_threat(x, y, dx, dy, position, color):
   color:
     what color are the stones of the threat
   """
+  if not (0 <= x < len(position) and 0 <= y < len(position)):
+    return False
   if not (0 <= x + 4 * dx < len(position) and 0 <= y + 4 * dy < len(position)):
     return False
   # case of OOO.O
   nb_cons = nb_consecutives(x, y, dx, dy, position, color)
   if (nb_cons == 3 and position[x + 3 * dx][y + 3 * dy] == 0 and
           position[x + 4 * dx][y + 4 * dy] == color):
+    return True
+  # case of O.OOO
+  if (nb_cons == 1 and position[x + 2 * dx][y + 2 * dy] == position[x + 3 * dx][y + 3 * dy] == position[x + 4 * dx][y + 4 * dy] == color and position[x + dx][y + dy] == 0):
     return True
   # checks that coordinates of possible open ends match with borders
   if not (0 <= x - dx < len(position) and 0 <= y - dy < len(position) and
@@ -117,6 +153,12 @@ def is_this_a_threat(x, y, dx, dy, position, color):
     return False
   # checks if it's .OO.O. or .O.OO.
   return (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)
+
+
+def threat_score(x, y, dx, dy, position, color, my_turn):
+  threat = (is_this_a_threat(x - 2 * dx, y - 2 * dy, dx, dy, position, color) or
+            is_this_a_threat(x - dx, y - dy, dx, dy, position, color))
+  return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
 
 def score_for_color(position, color, my_turn):
@@ -141,11 +183,10 @@ def score_for_color(position, color, my_turn):
   winning_groups = 0
   for x in range(len(position)):
     for y in range(len(position)):
+      if not position[x][y]:
+        continue
       for (dx, dy) in SLOPES:
-        threat = is_this_a_threat(x, y, dx, dy, position, color)
-        tot += threat * (1e10 if my_turn else 5e1)
-        if not position[x][y]:
-          continue
+        tot += threat_score(x, y, dx, dy, position, color, my_turn)
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
@@ -175,6 +216,7 @@ def simple_heuristic(position, color, my_turn):
   """
   first_score = score_for_color(position, color, my_turn)
   second_score = score_for_color(position, opposite(color), not my_turn)
+  # print(f"{first_score:2E}-{second_score:2E}")
   return (first_score - second_score)
 
 
@@ -241,7 +283,7 @@ def advantage_combinations(winning_groups):
   winning_groups: int
     Number of group of stones that appear as winning (e.g. free four)
   """
-  return (winning_groups >= 2) * 1e8
+  return (winning_groups >= 2) * SCORE['multiple_threats']
 
 
 def score(consecutive, open_ends, my_turn):
@@ -260,27 +302,27 @@ def score(consecutive, open_ends, my_turn):
     Is it my turn or not? Something to take into account when evaluating board.
   """
   if consecutive >= 5:
-    return 1e16
+    return SCORE['XXXXX']
   elif consecutive == 4:
     if open_ends == 1:
-      return 1e10 if my_turn else 5e1
+      return SCORE['OXXXX.'] if my_turn else SCORE['XOOOO.']
     elif open_ends == 2:
-      return 1e12 if my_turn else 1e11
+      return SCORE['.XXXX.'] if my_turn else SCORE['.OOOO.']
   elif consecutive == 3:
     if open_ends == 1:
-      return 1e2 if my_turn else 5e1
-    elif open_ends == 2:  # FIXME: later, deal with spaces outside open ends
-      return 1e5 if my_turn else 5e4
+      return SCORE['OXXX.'] if my_turn else SCORE['XOOO.']
+    elif open_ends == 2:
+      return SCORE['.XXX.'] if my_turn else SCORE['.OOO.']
   elif consecutive == 2:
     if open_ends == 1:
       # having your stones captured is really bad!
-      return -1e4 if my_turn else -1e8
+      return SCORE['OXX.'] if my_turn else SCORE['XOO.']
     elif open_ends == 2:
-      return 5
+      return SCORE['.XX.']
   elif consecutive == 1:
     if open_ends == 1:
-      return 0.5
+      return SCORE['OX.']
     elif open_ends == 2:
-      return 1
+      return SCORE['.X.']
   if (open_ends == 0):
-    return 0
+    return SCORE['no open ends']

@@ -57,9 +57,7 @@ class MiniMaxAgent(Agent):
     return self.best_moves(self.simple_evaluation(gh))
 
   def find_move(self, gh):
-    print("entering find move")
     # If empty, start with the center
-    total_start = time.time()
     if np.sum(gh.board.board) == 0:
       return gh.size // 2, gh.size // 2
 
@@ -67,36 +65,18 @@ class MiniMaxAgent(Agent):
     score_map = self.simple_evaluation(gh)
     # Find the list of best moves using this score map
     candidates = self.best_moves(score_map)
-    hcand = [human_move(move) for move in candidates]
-    # estimate the value of those candidates using minimax at full depth
-    tree_list, values = [], []
-    # values = [self.minimax(gh, coord, self.depth - 1, True)
-              # for coord in candidates]
-    for coord in candidates:
-      tree = Node(coord, val=0)
-      # values.append(self.ab_memory(gh, coord, self.depth - 1, True, tree))
-      # values.append(self.mtdf(gh, coord, self.depth - 1, tree))
-      values.append(self.iterative_deepening(gh, coord))
-      tree_list.append(tree)
-    if self.debug:
-      print(gh.board)
-      print(f"hcandidates={hcand}")
-      for i, tree in enumerate(tree_list):
-        tree.val = values[i]
-        for pre, _, node in RenderTree(tree):
-          print("%s%s (val = %2d)" % (pre, human_move(node.name), node.val))
+    values = [self.iterative_deepening(gh, coord) for coord in candidates]
     # return the best candidate
-    print(f"total time is {time.time()-total_start}s")
     return candidates[np.argmax(values)]
 
   def iterative_deepening(self, game_handler, coord):
     start = time.time()
     value = 0
     for depth in range(self.depth):
-      print(f"depth is {depth} and diff time is {time.time() - start}")
-      if time.time() - start >= (self.time_limit / 1000):
+      if time.time() - start >= (self.time_limit / 10000):
         return value
-      value = self.mtdf(game_handler, coord, depth)
+      # value = self.mtdf(game_handler, coord, depth)
+      value = self.ab_memory(game_handler, coord, depth)
     return value
 
   def simple_evaluation(self, game_handler):
@@ -114,7 +94,7 @@ class MiniMaxAgent(Agent):
     """
     gh, size = game_handler, game_handler.size
     score_map = np.full((size, size), -np.inf)
-    player, _ = self.return_players(gh, True)
+    player, opponent = self.return_players(gh, True)
     for x in range(size):
       for y in range(size):
         # only do moves that are near current stones
@@ -122,8 +102,7 @@ class MiniMaxAgent(Agent):
            (not gh.can_place(x, y, player))):
           continue
         # select top max_moves_checked moves with evaluation of depth one
-          # score_map[x][y] = self.ab_memory(gh, (x, y), self.simple_eval_depth, True)
-        score_map[x][y] = self.mtdf(gh, (x, y), self.simple_eval_depth)
+        score_map[x][y] = self.ab_memory(gh, (x,y), 0)
     return score_map
 
   def best_moves(self, score_map):
@@ -145,8 +124,6 @@ class MiniMaxAgent(Agent):
                                       score_map.shape)
       top_move_list.append((x_max, y_max))
       score_map[x_max][y_max] = -np.inf
-    # np.set_printoptions(linewidth=np.inf, precision=4)
-    # print(score_map)
     return top_move_list
 
   def evaluation(self, position, color, my_turn, player, opponent):
@@ -177,7 +154,7 @@ class MiniMaxAgent(Agent):
     move_color = self.color if max_player else opposite(self.color)
     return node.players[move_color - 1], node.players[opposite(move_color) - 1]
 
-  def minimax(self, node, move, depth, max_player, tree=None, alpha=-np.inf,
+  def minimax(self, node, move, depth, max_player=True, tree=None,alpha=-np.inf,
               beta=np.inf):
     """The minimax function returns a heuristic value for leaf nodes (terminal
     nodes and nodes at the maximum search depth). Non leaf nodes inherit their
@@ -226,7 +203,7 @@ class MiniMaxAgent(Agent):
     node.undo_move()
     return val
 
-  def ab_memory(self, node, move, depth, max_player, tree=None,
+  def ab_memory(self, node, move, depth, max_player=True, tree=None,
                              alpha=-np.inf, beta=np.inf):
     """Same as alpha beta pruning but uses hash to retrieve values for things
     it saw before.
@@ -247,25 +224,24 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    # tests if already seen node (that's why it's called "with memory")
-    # cf. https://people.csail.mit.edu/plaat/mtdf.html#abmem
-    # if is_node_terminal(node):
-    #   return np.inf if max_player else -np.inf
+    player, opponent = self.return_players(node, max_player)
+    node.do_move(move, player)
+
+    # # tests if already seen node (that's why it's called "with memory")
+    # # cf. https://people.csail.mit.edu/plaat/mtdf.html#abmem
     node_id = hash(node.board.board.tostring())
     if node_id in self.table:
+      # print(f"move is: {move} and node_id is: {node_id}")
       n = self.table[node_id]
       if n.lowerbound >= beta:
+        node.undo_move()
         return n.lowerbound
       if n.upperbound <= alpha:
+        node.undo_move()
         return n.upperbound
       alpha = max(alpha, n.lowerbound)
       beta = min(beta, n.upperbound)
 
-    player, opponent = self.return_players(node, max_player)
-    # start your estimation of the move by doing the move
-    if not node.board.is_empty(*move):
-      return -np.Inf
-    node.do_move(move, player)
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
       val = self.evaluation(node.board.board, self.color, 1 - max_player,
@@ -275,13 +251,11 @@ class MiniMaxAgent(Agent):
       sign = 1 if max_player else -1
       val = sign * np.inf
       lim = [alpha, beta]
-      for new_move in self.child(node):
-        new_tree = Node(new_move, parent=tree, val=0)
+      for new_move in node.child(player):
         val = sign * min(sign * val,
-                         sign * self.minimax(node, new_move, depth - 1,
-                                             1 - max_player, new_tree, lim[0],
+                         sign * self.ab_memory(node, new_move, depth - 1,
+                                             1 - max_player, None, lim[0],
                                              lim[1]))
-        new_tree.val = val
         if sign * (lim[1 - max_player] - val) >= 0:
           break
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
