@@ -1,4 +1,5 @@
 import time
+import copy
 
 from gomoku.agent import Agent
 from gomoku.agents import MiniMaxAgent
@@ -48,6 +49,8 @@ class GameHandler(object):
     self.current = 0
     self.error = ""
     self.capture_history = []
+    self.old_old_capture_history = []
+    self.old_capture_history = []
     self.move_history = []
     self.state_history = []
     self.turn = 1
@@ -58,12 +61,12 @@ class GameHandler(object):
   def restart(self):
     """Reset all attributes to their initial states"""
     self.board.restart()
-    self.players[0].captures = 0
-    self.players[0].last_move = (-2, -2)
-    self.players[0].aligned_five_prev = False
-    self.players[1].captures = 0
-    self.players[1].last_move = (-2, -2)
-    self.players[1].aligned_five_prev = False
+    for player in self.players:
+      player.captures = 0
+      player.last_move = (-2, -2)
+      player.aligned_five_prev = False
+      if hasattr(player, 'undo_scores'):
+        player.reset()
     if self.script:
       self.script.restart()
 
@@ -171,7 +174,11 @@ class GameHandler(object):
     self.board.place(*move, player.color)
     player.last_move = move
     self.move_history.append(move)
-    self.capture_history.append(Rules.capture(self.board, player))
+    captures = Rules.capture(self.board, player)
+    if captures:
+      self.old_old_capture_history = copy.deepcopy(self.old_capture_history)
+      self.old_capture_history = copy.deepcopy(self.capture_history)
+    self.capture_history.append(captures)
     return True
 
   def undo_move(self):
@@ -187,6 +194,8 @@ class GameHandler(object):
     player.last_move = last_move
     player.captures = captures
     player.aligned_five_prev = aligned_five_prev
+    if hasattr(player, 'undo_scores'):
+      player.color_scores = player.undo_scores
     return self
 
   def child(self, player):
@@ -209,11 +218,16 @@ class GameHandler(object):
       for y in range(self.size):
         if not is_there_stones_around(self.board.board, x, y):
           continue
-        if self.board.is_empty(x, y):
+        if self.can_place(x, y, player):
           children.append((x, y))
-        # if self.can_place(x, y, player):
-        #   children.append((x, y))
     return children
+
+  def retrieve_captured_stones(self):
+    all_captures = [move for captures in self.capture_history
+                         for move in captures]
+    all_captures_old = [move for captures in self.old_old_capture_history
+                         for move in captures]
+    return list(set(all_captures) - set(all_captures_old))
 
   def __str__(self):
     player = self.players[self.current]

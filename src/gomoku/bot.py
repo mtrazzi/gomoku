@@ -45,7 +45,7 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=1, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, color=1, depth=3, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
@@ -54,6 +54,14 @@ class MiniMaxAgent(Agent):
     self.table = {}
     self.time_limit = 0.5
     self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
+    self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
+    self.color_scores_dict = {}
+    self.last_captures = []
+
+  def reset(self):
+    self.table = {}
+    self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
+    self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.color_scores_dict = {}
 
   def child(self, gh):
@@ -63,11 +71,10 @@ class MiniMaxAgent(Agent):
     # If empty, start with the center
     if np.sum(gh.board.board) == 0:
       return gh.size // 2, gh.size // 2
-    # np.set_printoptions(linewidth=np.inf, precision=0)
-    # print(self.color_scores[0])
-    # print(self.color_scores[1])
 
     start = time.time()
+    # Retrieve last captures
+    self.last_captures = gh.retrieve_captured_stones()
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
     print(f"time for simple evaluation: {time.time() - start}s")
@@ -76,6 +83,9 @@ class MiniMaxAgent(Agent):
     values = [self.iterative_deepening(gh, coord) for coord in candidates]
     # return the best candidate
     move_to_play = candidates[np.argmax(values)]
+    # in case of undo we still want to have the previous scores available
+    self.undo_scores = self.color_scores
+    # only update color score according to move we're (actually) playing
     self.color_scores = self.color_scores_dict[move_to_play]
     print(f"total time: {time.time() - start}s")
     return move_to_play
@@ -84,10 +94,11 @@ class MiniMaxAgent(Agent):
     start = time.time()
     value = 0
     for depth in range(self.depth):
-      if time.time() - start >= (self.time_limit / 100000):
+      if time.time() - start >= (self.time_limit / 10):
+        print(f"skipping at depth = {depth}")
         return value
-      # value = self.mtdf(game_handler, coord, depth)
-      value = self.ab_memory(game_handler, coord, depth)
+      value = self.mtdf(game_handler, coord, depth)
+      # value = self.ab_memory(game_handler, coord, depth)
     return value
 
   def simple_evaluation(self, game_handler):
@@ -147,7 +158,7 @@ class MiniMaxAgent(Agent):
       score_map[x_max][y_max] = -np.inf
     return top_move_list
 
-  def evaluation(self, position, color, my_turn, player, opponent):
+  def evaluation(self, position, color, my_turn, player, opponent, captures=[]):
     """Evaluation function used for estimating the value of a node in minimax.
 
     Parameters
@@ -160,13 +171,16 @@ class MiniMaxAgent(Agent):
       The player that just placed a stone.
     opponent: Player
       The other player.
+    captures: (int, int) list
+      List of last captured stones (for heuristic).
 
     Return
     ------
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    score_simple_heuristic, new_color_scores = simple_heuristic(position, color,my_turn, player.last_move, copy.deepcopy(self.color_scores))
+    stones = [player.last_move, opponent.last_move] + captures
+    score_simple_heuristic, new_color_scores = simple_heuristic(position, color,my_turn, stones, copy.deepcopy(self.color_scores))
     self.color_scores_dict[player.last_move] = new_color_scores
     return (score_simple_heuristic + capture_heuristic(player, opponent, player.color == self.color) + (1 / 100) * past_heuristic(opponent.last_move, player.last_move)) * 1e-12
 
@@ -266,7 +280,7 @@ class MiniMaxAgent(Agent):
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
       val = self.evaluation(node.board.board, self.color, 1 - max_player,
-                            player, opponent)
+                            player, opponent, node.retrieve_captured_stones())
     else:
       # using a sign to avoid two conditions in minimax
       sign = 1 if max_player else -1

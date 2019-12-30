@@ -1,15 +1,15 @@
 import numpy as np
 import time
 
-from gomoku.utils import SLOPES, all_equal, coordinates, opposite, can_impact
+from gomoku.utils import SLOPES, all_equal, coordinates, opposite, were_impacted
 
 SCORE = {
   'XXXXX': 1e16,
-  'OXXXX.': 1e12,
-  'XXX.X': 1e12,
+  'OXXXX.': 1e14,
+  'XXX.X': 1e14,
   'OOO.O': 1e1,
-  '.XXXX.': 1e12,
-  '.OOOO.': 1e11,
+  '.XXXX.': 1e14,
+  '.OOOO.': 1e13,
   '.XXX.': 1e10,
   '.OOO.': 5e4,
   'OXXX.': 1e2,
@@ -103,9 +103,9 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
 
 
 def is_this_a_threat(x, y, dx, dy, position, color):
-  """Checks if there is a pattern of OOO.O or .OO.O. or .O.OO. with a threat to
-  play on a middle . where the color of stones "O" is `color` in the board
-  position `position`,starting from (x, y) and using slope (dx, dy).
+  """Checks if there is a pattern of OOO.O or .OO.O. or .O.OO. OO.OO with
+  threat to play on a middle . where the color of stones "O" is `color` in the
+  board position `position`,starting from (x, y) and using slope (dx, dy).
 
   Parameters
   ----------
@@ -128,9 +128,10 @@ def is_this_a_threat(x, y, dx, dy, position, color):
     return False
   c = coordinates(x, y, dx, dy, 6)
   c_1, c_2, c_3, c_4, c_5 = [position[c[i][0]][c[i][1]] for i in range(5)]
-  # case of OOO.O and 0.000
+  # case of OOO.O, 0.000 or OO.OO
   if ((c_1 == c_2 == c_3 == c_5 == color and c_4 == 0) or
-      (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0)):
+      (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0) or
+      (c_1 == c_2 == c_4 == c_5 == color and c_3 == 0)):
     return True
   # checks that coordinates of possible open ends match with borders
   if not (0 <= x - dx < len(position) and 0 <= y - dy < len(position) and
@@ -149,7 +150,7 @@ def threat_score(x, y, dx, dy, position, color, my_turn):
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
 
-def score_for_color(position, color, my_turn, last_move, past_scores):
+def score_for_color(position, color, my_turn, stones, past_scores):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
 
@@ -161,8 +162,8 @@ def score_for_color(position, color, my_turn, last_move, past_scores):
     Color of the stones we're looking at
   my_turn: bool
     Is it my turn or not? Something to take into account when evaluating board.
-  last_move: (int, int)
-    The last move played.
+  stones: int list
+    List of stones (last moves, stones captured).
 
   Return
   ------
@@ -170,11 +171,11 @@ def score_for_color(position, color, my_turn, last_move, past_scores):
     How much total score do I get based on another function `score`.
   """
   tot = 0
-  winning_groups = 0
+  # winning_groups = 0
   for x in range(len(position)):
     for y in range(len(position)):
       dtot = 0
-      if not position[x][y] or not can_impact(last_move, x, y):
+      if not position[x][y] or not were_impacted(stones, x, y):
         tot += past_scores[x][y]
         continue
       for (dx, dy) in SLOPES:
@@ -182,16 +183,17 @@ def score_for_color(position, color, my_turn, last_move, past_scores):
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
-          can_five = possible_five(position, x, y, dx, dy, nb_cons,
-                                   color)
-          dtot += score(nb_cons, op_ends, my_turn) * (10 * can_five + 1)
-          winning_groups += winning_stones(nb_cons, op_ends)
+          # can_five = possible_five(position, x, y, dx, dy, nb_cons,
+                                  #  color)
+          dtot += score(nb_cons, op_ends, my_turn) # * (10 * can_five + 1)
+          # winning_groups += winning_stones(nb_cons, op_ends)
       tot += dtot
       past_scores[x][y] = dtot
-  return tot + advantage_combinations(winning_groups), past_scores
+  # return tot + advantage_combinations(winning_groups), past_scores
+  return tot, past_scores
 
 
-def simple_heuristic(position, color, my_turn, last_move, past_scores):
+def simple_heuristic(position, color, my_turn, stones, past_scores):
   """Evaluation function used for estimating the value of a node in minimax.
 
   Parameters
@@ -202,16 +204,16 @@ def simple_heuristic(position, color, my_turn, last_move, past_scores):
     The color of of the stones for the first score.
   my_turn: bool
     Is it my turn or not? Something to take into account when evaluating board.
-  last_move: (int, int)
-    The last move played.
+  stones: int list
+    List of stones (last moves, stones captured).
 
   Return
   ------
   score: int
     How the situation looks like taking into account the two players.
   """
-  first_score, new_past_scores_1 = score_for_color(position, color, my_turn, last_move, past_scores[0])
-  second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, last_move, past_scores[1])
+  first_score, new_past_scores_1 = score_for_color(position, color, my_turn, stones, past_scores[0])
+  second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, stones, past_scores[1])
   # print(f"{first_score:2E}-{second_score:2E}")
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
@@ -252,6 +254,8 @@ def possible_five(position, x, y, dx, dy, nb_consec, stones_color):
   """Checks if an alignment has enough space to develop into a 5-in-a-row."""
   if nb_consec >= 5:
     return True
+  if nb_consec < 2:
+    return False
   nb_stones_left = 5 - nb_consec
   for i in range(nb_stones_left + 1):
     # testing if it's possible to have i free intersections, then `nb_consec`

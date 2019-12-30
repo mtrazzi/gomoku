@@ -91,7 +91,12 @@ def get_player(gameHandler, color, maximizingPlayer):
   return player if maximizingPlayer else opponent
 
 
-def can_impact(last_move, x, y):
-  """Returns true if coordinates being tested are close enough to last move."""
-  dx, dy = abs(last_move[0] - x), abs(last_move[1] - y)
+def impact(stone, x, y):
+  """Returns true if coordinates (x, y) were impacted by `stone`."""
+  dx, dy = abs(stone[0] - x), abs(stone[1] - y)
   return (dx < 6 and dy == 0) or (dy < 6 and dx == 0) or (dx == dy and dx < 6)
+
+
+def were_impacted(stones, x, y):
+  """Returns true if coordinates (x, y) were impacted by set of stones."""
+  return np.any([impact(move, x, y) for move in stones])
