@@ -45,7 +45,7 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=3, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, color=1, depth=1, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves

@@ -3,6 +3,8 @@ import time
 
 from gomoku.utils import SLOPES, all_equal, coordinates, opposite, were_impacted
 
+import line_profiler
+
 SCORE = {
   'XXXXX': 1e16,
   'OXXXX.': 1e14,
@@ -25,7 +27,7 @@ SCORE = {
   'stone_captured': 1e8,
 }
 
-
+# @profile
 def nb_consecutives(x, y, dx, dy, position, color):
   """Maximum number of consecutive stones of color `color` in the board position
   `position`,starting from (x,y) and using slope (dx, dy).
@@ -50,19 +52,20 @@ def nb_consecutives(x, y, dx, dy, position, color):
   max_consec: int
     Max. number of consecutive stones of color starting at x,y, with slope dx/dy
   """
-  if position[x][y] != color:
-    return 0
   # don't start counting if you're not the first stone of a series
   if ((0 <= x - dx < len(position)) and (0 <= y - dy < len(position))
       and position[x - dx][y - dy] == color):
     return 0
   # check what is the biggest nb_coordinates that you can fit in direction dx/dy
-  nb_consec = 1
-  while True:
+  nb_consec = 0
+  while position[x][y] == color and (0 <= x < len(position)) and (0 <= y < len(position)):
     nb_consec += 1
-    coord = coordinates(x, y, dx, dy, nb_consec)
-    if not all_equal(coord, position, color):
-      return nb_consec - 1
+    x += dx
+    y += dy
+    # coord = coordinates(x, y, dx, dy, nb_consec)
+    # if not all_equal(coord, position, color):
+    #   return nb_consec - 1
+  return nb_consec
 
 
 def nb_open_ends(x, y, dx, dy, nb_consec, position):
@@ -101,55 +104,39 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
   ends += (0 <= p2[0] < m and 0 <= p2[1] < m) and position[p2[0]][p2[1]] == 0
   return ends
 
-
+@profile
 def is_this_a_threat(x, y, dx, dy, position, color):
-  """Checks if there is a pattern of OOO.O or .OO.O. or .O.OO. OO.OO with
-  threat to play on a middle . where the color of stones "O" is `color` in the
-  board position `position`,starting from (x, y) and using slope (dx, dy).
+  if position[x][y] == color:
+    return is_this_a_threat_2(x, y, dx, dy, position, color)
+  else:
+    return is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color)
 
-  Parameters
-  ----------
-  x: int
-    x-coordinate of the start position
-  y: int
-    x-coordinate of the start position
-  dx: int
-    x-coordinate slope
-  dy: int
-    y-coordinate slope
-  position: numpy.ndarray
-    position of the board
-  color:
-    what color are the stones of the threat
-  """
-  if not (0 <= x < len(position) and 0 <= y < len(position)):
-    return False
+
+@profile
+def is_this_a_threat_2(x, y, dx, dy, position, color):
   if not (0 <= x + 4 * dx < len(position) and 0 <= y + 4 * dy < len(position)):
     return False
-  c = coordinates(x, y, dx, dy, 6)
-  c_1, c_2, c_3, c_4, c_5 = [position[c[i][0]][c[i][1]] for i in range(5)]
+  c_1, c_2, c_3, c_4, c_5 = position[x][y], position[x + dx][y + dy], position[x + 2 * dx][y + 2 * dy], position[x + 3 * dx][y + 3 * dy], position[x + 4 * dx][y + 4 * dy]
   # case of OOO.O, 0.000 or OO.OO
-  if ((c_1 == c_2 == c_3 == c_5 == color and c_4 == 0) or
+  return ((c_1 == c_2 == c_3 == c_5 == color and c_4 == 0) or
       (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0) or
-      (c_1 == c_2 == c_4 == c_5 == color and c_3 == 0)):
-    return True
-  # checks that coordinates of possible open ends match with borders
-  if not (0 <= x - dx < len(position) and 0 <= y - dy < len(position) and
-          0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
-    return False
-  c_6 = position[c[5][0]][c[5][1]]
-  if not (c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color):
-    return False
+      (c_1 == c_2 == c_4 == c_5 == color and c_3 == 0))
+
+@profile
+def is_this_a_threat_1(x, y, dx, dy, position, color):
   # case of .OO.O. or .O.OO.
-  return (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)
+  if not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
+    return False
+  c_1, c_2, c_3, c_4, c_5, c_6 = position[x][y], position[x + dx][y + dy], position[x + 2 * dx][y + 2 * dy], position[x + 3 * dx][y + 3 * dy], position[x + 4 * dx][y + 4 * dy], position[x + 5 * dx][y + 5 * dy]
+  return ((c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color) and
+         (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color))
 
-
+@profile
 def threat_score(x, y, dx, dy, position, color, my_turn):
-  threat = (is_this_a_threat(x - 2 * dx, y - 2 * dy, dx, dy, position, color) or
-            is_this_a_threat(x - dx, y - dy, dx, dy, position, color))
+  threat = is_this_a_threat(x, y, dx, dy, position, color)
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
-
+@profile
 def score_for_color(position, color, my_turn, stones, past_scores):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
