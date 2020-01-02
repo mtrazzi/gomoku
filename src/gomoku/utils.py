@@ -111,16 +111,18 @@ def impact_slope(stone, x, y, dx, dy):
   return impact(stone, x, y) and dx == delta_x and dy == delta_y
 
 def were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
+  if dx_stone == 0 and dy_stone == 0:
+      return True
   if (dx_stone == 0 and not (dx == 0)) or (dy_stone == 0 and not (dy == 0)):
     return False
   if abs(dx) == abs(dy) and not (abs(dx_stone) == abs(dy_stone)):
     return False
   if dx > 0:
-    return -2 <= dx_stone < 5
+    return -4 <= dx_stone <= 4
   elif dx < 0:
-    return -5 <= dx_stone < 2
+    return -4 <= dx_stone <= 4
   else:
-    return -2 <= dy_stone < 5
+    return -4 <= dy_stone <= 4
 
 @profile
 def were_impacted_slope(stones, x, y, dx, dy):
@@ -128,13 +130,4 @@ def were_impacted_slope(stones, x, y, dx, dy):
     dx_stone, dy_stone = x - stone[0], y - stone[1]
     if were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
       return True
-  if (x, y) == (8, 8) and (dx, dy) == (-1, 1):
-    print(f"for stones={stones}, {x}, {y}, {dx}, {dy} result was False")
   return False
-
-if __name__ == '__main__':
-  stones = [(9, 7), (7, 11)]
-  x, y = 8, 9
-  dx, dy = [-1, 1]
-  result = were_impacted_slope(stones, x, y, dx, dy)
-  print(f"result is {result}")

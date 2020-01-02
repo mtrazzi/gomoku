@@ -31,7 +31,7 @@ SCORE = {
   'OXX.': -1e4,
   'XOO.': -1e8,
   'multiple_threats': 1e8,
-  'stone_captured': 1e12,
+  'stone_captured': 1e11,
 }
 
 def nb_consecutives(x, y, dx, dy, position, color):
@@ -108,10 +108,9 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
   return ends
 
 def is_this_a_threat(x, y, dx, dy, position, color):
-  if position[x][y] == color:
-    return is_this_a_threat_2(x, y, dx, dy, position, color)
-  else:
-    return is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color) #FIXME: return False directly instead of calling is_this_a_threat_1? Change how this is called in the score_for_color code?
+  return (position[x][y] == color and
+         (is_this_a_threat_2(x, y, dx, dy, position, color) or
+         is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color)))
 
 
 def is_this_a_threat_2(x, y, dx, dy, position, color):
@@ -128,8 +127,10 @@ def is_this_a_threat_1(x, y, dx, dy, position, color):
   if not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
     return False
   c_1, c_2, c_3, c_4, c_5, c_6 = position[x][y], position[x + dx][y + dy], position[x + 2 * dx][y + 2 * dy], position[x + 3 * dx][y + 3 * dy], position[x + 4 * dx][y + 4 * dy], position[x + 5 * dx][y + 5 * dy]
+  if (x == 9 and y == 9 and dx == 0 and dy == 1 and color == 1):
+    print(c_1, c_2, c_3, c_4, c_5, c_6)
   return ((c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color) and
-         (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color))
+         ((c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)))
 
 def threat_score(x, y, dx, dy, position, color, my_turn):
   threat = is_this_a_threat(x, y, dx, dy, position, color)
@@ -157,6 +158,7 @@ def score_for_color(position, color, my_turn, stones, past_scores):
   """
   tot = 0
   # winning_groups = 0
+  l = []
   for x in range(len(position)):
     for y in range(len(position)):
       dtot = 0
@@ -165,9 +167,9 @@ def score_for_color(position, color, my_turn, stones, past_scores):
         continue
       for (dx, dy) in SLOPES:
         if not were_impacted_slope(stones, x, y, dx, dy):
-          if (x,y) == (8, 8):
-            print("continue")
           continue
+        if (x, y) not in l:
+          l.append((x,y))
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         dtot += threat_score(x, y, dx, dy, position, color, my_turn)
         if nb_cons > 0:
@@ -176,12 +178,9 @@ def score_for_color(position, color, my_turn, stones, past_scores):
                                   #  color)
           dtot += score(nb_cons, op_ends, my_turn) # * (10 * can_five + 1)
           # winning_groups += winning_stones(nb_cons, op_ends)
-          # if (x, y) == (8, 8):
-          #   print(f"nb_cons={nb_cons}, score={score(nb_cons, op_ends, my_turn)}")
       tot += dtot
       past_scores[x][y] = dtot
   # return tot + advantage_combinations(winning_groups), past_scores
-  print(f"tot ended up being: {tot}")
   return tot, past_scores
 
 
@@ -206,7 +205,7 @@ def simple_heuristic(position, color, my_turn, stones, past_scores):
   """
   first_score, new_past_scores_1 = score_for_color(position, color, my_turn, stones, past_scores[0])
   second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, stones, past_scores[1])
-  print(f"{first_score:2E}-{second_score:2E}={first_score-second_score:2E}")
+  # print(f"{first_score:2E}-{second_score:2E}={first_score-second_score:2E}")
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 
