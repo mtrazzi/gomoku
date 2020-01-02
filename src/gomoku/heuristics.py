@@ -64,7 +64,7 @@ def nb_consecutives(x, y, dx, dy, position, color):
     return 0
   # check what is the biggest nb_coordinates that you can fit in direction dx/dy
   nb_consec = 0
-  while position[x][y] == color and (0 <= x < len(position)) and (0 <= y < len(position)):
+  while (0 <= x < len(position)) and (0 <= y < len(position) and position[x][y] == color):
     nb_consec += 1
     x += dx
     y += dy
@@ -124,11 +124,9 @@ def is_this_a_threat_2(x, y, dx, dy, position, color):
 
 def is_this_a_threat_1(x, y, dx, dy, position, color):
   # case of .OO.O. or .O.OO.
-  if not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
+  if (not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)) or not ((0 <= x < len(position) and 0 <= y < len(position)))):
     return False
   c_1, c_2, c_3, c_4, c_5, c_6 = position[x][y], position[x + dx][y + dy], position[x + 2 * dx][y + 2 * dy], position[x + 3 * dx][y + 3 * dy], position[x + 4 * dx][y + 4 * dy], position[x + 5 * dx][y + 5 * dy]
-  if (x == 9 and y == 9 and dx == 0 and dy == 1 and color == 1):
-    print(c_1, c_2, c_3, c_4, c_5, c_6)
   return ((c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color) and
          ((c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)))
 

@@ -218,7 +218,7 @@ class GameHandler(object):
       for y in range(self.size):
         if not is_there_stones_around(self.board.board, x, y):
           continue
-        if self.can_place(x, y, player):
+        if self.board.is_empty(x, y):
           children.append((x, y))
     return children
 

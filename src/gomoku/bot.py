@@ -7,7 +7,16 @@ from gomoku.agent import Agent, is_node_terminal
 from gomoku.heuristics import (capture_heuristic, past_heuristic,
                                simple_heuristic)
 from gomoku.utils import human_move, is_there_stones_around, opposite
+from gomoku.rules import Rules
 
+import builtins
+
+try:
+  builtins.profile
+except AttributeError:
+  # No line profiler, provide a pass-through version
+  def profile(func): return func
+  builtins.profile = profile
 
 class RandomAgent(Agent):
   """Class RandomAgent. Plays valid random moves.
@@ -67,38 +76,41 @@ class MiniMaxAgent(Agent):
   def child(self, gh):
     return self.best_moves(self.simple_evaluation(gh))
 
-  def find_move(self, gh):
+  def find_move(self, gh, max_depth=None):
     # If empty, start with the center
     if np.sum(gh.board.board) == 0:
       return gh.size // 2, gh.size // 2
 
     start = time.time()
+    player, _ = self.return_players(gh, True)
     # Retrieve last captures
     self.last_captures = gh.retrieve_captured_stones()
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
-    print(f"time for simple evaluation: {time.time() - start}s")
+    # print(f"time for simple evaluation: {time.time() - start}s")
     # Find the list of best moves using this score map
     candidates = self.best_moves(score_map)
-    values = [self.iterative_deepening(gh, coord) for coord in candidates]
+    actual_candidates = [move for move in candidates if gh.can_place(*move, player)]
+    values = [self.iterative_deepening(gh, coord, max_depth) for coord in candidates]
     # return the best candidate
     move_to_play = candidates[np.argmax(values)]
     # in case of undo we still want to have the previous scores available
     self.undo_scores = self.color_scores
     # only update color score according to move we're (actually) playing
     self.color_scores = self.color_scores_dict[move_to_play]
-    print(f"total time: {time.time() - start}s")
+    # print(f"total time: {time.time() - start}s")
     return move_to_play
 
-  def iterative_deepening(self, game_handler, coord):
+  def iterative_deepening(self, game_handler, coord, opt_depth):
     start = time.time()
     value = 0
-    for depth in range(self.depth):
+    max_depth = self.depth if opt_depth is None else opt_depth
+    for depth in range(max_depth):
       if time.time() - start >= (self.time_limit / 10):
         print(f"skipping at depth = {depth}")
         return value
-      value = self.mtdf(game_handler, coord, depth)
-      # value = self.ab_memory(game_handler, coord, depth)
+      # value = self.mtdf(game_handler, coord, depth)
+      value = self.ab_memory(game_handler, coord, depth)
     return value
 
   def simple_evaluation(self, game_handler):
@@ -238,6 +250,7 @@ class MiniMaxAgent(Agent):
     node.undo_move()
     return val
 
+  @profile
   def ab_memory(self, node, move, depth, max_player=True, tree=None,
                              alpha=-np.inf, beta=np.inf):
     """Same as alpha beta pruning but uses hash to retrieve values for things
@@ -262,6 +275,10 @@ class MiniMaxAgent(Agent):
     player, opponent = self.return_players(node, max_player)
     node.do_move(move, player)
 
+    # hardcoding here to see if infine loop stops
+    if Rules.aligned_win(node.board, player):
+      return np.inf if player.color == self.color else -np.inf
+
     # # tests if already seen node (that's why it's called "with memory")
     # # cf. https://people.csail.mit.edu/plaat/mtdf.html#abmem
     node_id = hash(node.board.board.tostring())
@@ -279,14 +296,14 @@ class MiniMaxAgent(Agent):
 
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
-      val = self.evaluation(node.board.board, self.color, 1 - max_player,
-                            player, opponent, node.retrieve_captured_stones())
+      val = self.evaluation(node.board.board, self.color, 1 - max_player, player, opponent, node.retrieve_captured_stones())
     else:
       # using a sign to avoid two conditions in minimax
       sign = 1 if max_player else -1
       val = sign * np.inf
       lim = [alpha, beta]
-      for new_move in node.child(player):
+      # for new_move in node.child(player):
+      for new_move in self.child(node):
         val = sign * min(sign * val,
                          sign * self.ab_memory(node, new_move, depth - 1,
                                              1 - max_player, None, lim[0],

@@ -2,6 +2,7 @@ import time
 import tkinter as tk
 
 from gomoku.agent import Agent
+from gomoku.bot import MiniMaxAgent
 from gomoku.visualizer.canvas import Canvas
 from gomoku.visualizer.frames import Frames
 from gomoku.visualizer.utils import COLOR, WINDOW_WIDTH
@@ -89,7 +90,13 @@ class Visualizer(object):
       self.playerInput = False
       move = player.find_move(self.gameHandler)
     else:
+      # trying to launch some alpha beta in background...
       self.playerInput = True
+      # if time.time() - self.timers[1 - current] < 0.5:
+      #   opponent = self.gameHandler.players[1 - current]
+      #   if isinstance(opponent, MiniMaxAgent):
+      #     print("gouligoula")
+      #     opponent.find_move(self.gameHandler, 1)
       if self.move is None:
         self.root.after(1, self.start)
         return
