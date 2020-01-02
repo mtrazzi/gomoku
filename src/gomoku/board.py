@@ -18,7 +18,6 @@ class Board(object):
     The board
   """
   def __init__(self, filename=None, size=19, cmap={0: '.', 1: 'X', 2: 'O'}):
-    self.board = [[0] * size] * size
     self.board = np.zeros((size, size))
     self.filename = filename
     self.size = size
@@ -45,8 +44,7 @@ class Board(object):
 
   def restart(self):
     """Reset board to it's initial state"""
-    self.board = [[0] * self.size] * self.size
-    # self.board = np.zeros((self.size, self.size))
+    self.board = np.zeros((self.size, self.size))
     if self.filename:
       self.parse(self.filename)
 

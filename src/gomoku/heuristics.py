@@ -1,9 +1,16 @@
 import numpy as np
 import time
 
-from gomoku.utils import SLOPES, all_equal, coordinates, opposite, were_impacted
+from gomoku.utils import SLOPES, all_equal, coordinates, opposite, were_impacted_slope
 
-import line_profiler
+import builtins
+
+try:
+    builtins.profile
+except AttributeError:
+    # No line profiler, provide a pass-through version
+    def profile(func): return func
+    builtins.profile = profile
 
 SCORE = {
   'XXXXX': 1e16,
@@ -24,10 +31,9 @@ SCORE = {
   'OXX.': -1e4,
   'XOO.': -1e8,
   'multiple_threats': 1e8,
-  'stone_captured': 1e8,
+  'stone_captured': 1e12,
 }
 
-# @profile
 def nb_consecutives(x, y, dx, dy, position, color):
   """Maximum number of consecutive stones of color `color` in the board position
   `position`,starting from (x,y) and using slope (dx, dy).
@@ -62,9 +68,6 @@ def nb_consecutives(x, y, dx, dy, position, color):
     nb_consec += 1
     x += dx
     y += dy
-    # coord = coordinates(x, y, dx, dy, nb_consec)
-    # if not all_equal(coord, position, color):
-    #   return nb_consec - 1
   return nb_consec
 
 
@@ -104,15 +107,13 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
   ends += (0 <= p2[0] < m and 0 <= p2[1] < m) and position[p2[0]][p2[1]] == 0
   return ends
 
-@profile
 def is_this_a_threat(x, y, dx, dy, position, color):
   if position[x][y] == color:
     return is_this_a_threat_2(x, y, dx, dy, position, color)
   else:
-    return is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color)
+    return is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color) #FIXME: return False directly instead of calling is_this_a_threat_1? Change how this is called in the score_for_color code?
 
 
-@profile
 def is_this_a_threat_2(x, y, dx, dy, position, color):
   if not (0 <= x + 4 * dx < len(position) and 0 <= y + 4 * dy < len(position)):
     return False
@@ -122,7 +123,6 @@ def is_this_a_threat_2(x, y, dx, dy, position, color):
       (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0) or
       (c_1 == c_2 == c_4 == c_5 == color and c_3 == 0))
 
-@profile
 def is_this_a_threat_1(x, y, dx, dy, position, color):
   # case of .OO.O. or .O.OO.
   if not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)):
@@ -131,12 +131,10 @@ def is_this_a_threat_1(x, y, dx, dy, position, color):
   return ((c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color) and
          (c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color))
 
-@profile
 def threat_score(x, y, dx, dy, position, color, my_turn):
   threat = is_this_a_threat(x, y, dx, dy, position, color)
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
-@profile
 def score_for_color(position, color, my_turn, stones, past_scores):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
@@ -162,21 +160,28 @@ def score_for_color(position, color, my_turn, stones, past_scores):
   for x in range(len(position)):
     for y in range(len(position)):
       dtot = 0
-      if not position[x][y] or not were_impacted(stones, x, y):
+      if not position[x][y]:
         tot += past_scores[x][y]
         continue
       for (dx, dy) in SLOPES:
-        dtot += threat_score(x, y, dx, dy, position, color, my_turn)
+        if not were_impacted_slope(stones, x, y, dx, dy):
+          if (x,y) == (8, 8):
+            print("continue")
+          continue
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
+        dtot += threat_score(x, y, dx, dy, position, color, my_turn)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
           # can_five = possible_five(position, x, y, dx, dy, nb_cons,
                                   #  color)
           dtot += score(nb_cons, op_ends, my_turn) # * (10 * can_five + 1)
           # winning_groups += winning_stones(nb_cons, op_ends)
+          # if (x, y) == (8, 8):
+          #   print(f"nb_cons={nb_cons}, score={score(nb_cons, op_ends, my_turn)}")
       tot += dtot
       past_scores[x][y] = dtot
   # return tot + advantage_combinations(winning_groups), past_scores
+  print(f"tot ended up being: {tot}")
   return tot, past_scores
 
 
@@ -201,7 +206,7 @@ def simple_heuristic(position, color, my_turn, stones, past_scores):
   """
   first_score, new_past_scores_1 = score_for_color(position, color, my_turn, stones, past_scores[0])
   second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, stones, past_scores[1])
-  # print(f"{first_score:2E}-{second_score:2E}")
+  print(f"{first_score:2E}-{second_score:2E}={first_score-second_score:2E}")
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 

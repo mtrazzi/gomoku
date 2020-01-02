@@ -2,6 +2,15 @@ import numpy as np
 
 SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
 
+import builtins
+
+try:
+    builtins.profile
+except AttributeError:
+    # No line profiler, provide a pass-through version
+    def profile(func): return func
+    builtins.profile = profile
+
 
 def coordinates(x, y, dx, dy, nb_consecutive=5):
   """Coordinates of consecutive intersections from (x,y) directed by (dx,dy)."""
@@ -90,13 +99,42 @@ def get_player(gameHandler, color, maximizingPlayer):
   opponent = players[1] if players[0].color == color else players[0]
   return player if maximizingPlayer else opponent
 
-
 def impact(stone, x, y):
-  """Returns true if coordinates (x, y) were impacted by `stone`."""
   dx, dy = abs(stone[0] - x), abs(stone[1] - y)
   return (dx < 6 and dy == 0) or (dy < 6 and dx == 0) or (dx == dy and dx < 6)
 
-
 def were_impacted(stones, x, y):
-  """Returns true if coordinates (x, y) were impacted by set of stones."""
   return np.any([impact(move, x, y) for move in stones])
+
+def impact_slope(stone, x, y, dx, dy):
+  delta_x, delta_y = np.sign(stone[0] - x), np.sign(stone[1] - y)
+  return impact(stone, x, y) and dx == delta_x and dy == delta_y
+
+def were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
+  if (dx_stone == 0 and not (dx == 0)) or (dy_stone == 0 and not (dy == 0)):
+    return False
+  if abs(dx) == abs(dy) and not (abs(dx_stone) == abs(dy_stone)):
+    return False
+  if dx > 0:
+    return -2 <= dx_stone < 5
+  elif dx < 0:
+    return -5 <= dx_stone < 2
+  else:
+    return -2 <= dy_stone < 5
+
+@profile
+def were_impacted_slope(stones, x, y, dx, dy):
+  for stone in stones:
+    dx_stone, dy_stone = x - stone[0], y - stone[1]
+    if were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
+      return True
+  if (x, y) == (8, 8) and (dx, dy) == (-1, 1):
+    print(f"for stones={stones}, {x}, {y}, {dx}, {dy} result was False")
+  return False
+
+if __name__ == '__main__':
+  stones = [(9, 7), (7, 11)]
+  x, y = 8, 9
+  dx, dy = [-1, 1]
+  result = were_impacted_slope(stones, x, y, dx, dy)
+  print(f"result is {result}")

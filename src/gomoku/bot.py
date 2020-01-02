@@ -77,6 +77,8 @@ class MiniMaxAgent(Agent):
     self.last_captures = gh.retrieve_captured_stones()
     # Estimate moves using a depth = 1 evaluation
     score_map = self.simple_evaluation(gh)
+    np.set_printoptions(linewidth=np.inf, precision=0)
+    print(score_map)
     print(f"time for simple evaluation: {time.time() - start}s")
     # Find the list of best moves using this score map
     candidates = self.best_moves(score_map)
@@ -126,6 +128,10 @@ class MiniMaxAgent(Agent):
         if (not is_there_stones_around(gh.board.board, x, y) or
            (not gh.can_place(x, y, player))):
           continue
+        if (x, y) == (6, 10):
+          print(f"estimating THE move ({x}, {y})")
+        else:
+          print(f"estimating A move ({x}, {y})")
         # only change the score map if close enough to last move played
         # select top max_moves_checked moves with evaluation of depth one
         start = time.time()

@@ -37,7 +37,7 @@ if __name__ == '__main__':
                                "alphabeta", "alphabeta+", "mtdf"],
                       help="Choose Player 1 behaviour.")
   parser.add_argument('-p2', "--player2",
-                      type=str, default="mtdf",
+                      type=str, default="minimax",
                       choices=["human", "minimax", "minimax+", "negamax", "pvs",
                                "alphabeta", "alphabeta+", "mtdf"],
                       help="Choose Player 2 behaviour.")
