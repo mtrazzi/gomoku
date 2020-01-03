@@ -13,7 +13,7 @@ except AttributeError:
     builtins.profile = profile
 
 SCORE = {
-  'XXXXX': 1e16,
+  'XXXXX': 1e15,
   'OXXXX.': 1e14,
   'XXX.X': 1e14,
   'OOO.O': 1e1,

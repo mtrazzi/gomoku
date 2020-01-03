@@ -25,6 +25,8 @@ NO_DOUBLE_FREE_THREES = {
   'legal_4': [(6, 9), True],
   'illegal_1': [(5, 8), False],
   'illegal_2': [(4, 4), False],
+  'illegal_3': [(9, 10), False],
+  'illegal_4': [(9, 10), False],
 }
 FILES = NO_DOUBLE_FREE_THREES.keys()
 BOARDS = {path: Board(eval_path(path)).board for path in FILES}
@@ -36,6 +38,10 @@ def test_double_threes(problem):
   board_name, (move, label) = problem
   game_handler = NODES[board_name]
   player = game_handler.players[BLACK]
+  print(f"before move: {move}")
+  print(game_handler.board)
   move = [move[0] - 1, move[1] - 1]
   game_handler.do_move(move, player)
+  print("after")
+  print(game_handler.board)
   assert Rules.no_double_threes(game_handler.board, player) == label

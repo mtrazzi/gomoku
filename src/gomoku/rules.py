@@ -96,7 +96,6 @@ class Rules(object):
       if (new_lst < [0, 0]).any():
         continue
       threes += indefensible_four(board, new_lst, color)
-
     return threes
 
   @staticmethod
