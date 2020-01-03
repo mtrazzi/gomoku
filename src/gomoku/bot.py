@@ -54,7 +54,7 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=2, max_top_moves=2, simple_eval_depth=0):
+  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
@@ -106,7 +106,7 @@ class MiniMaxAgent(Agent):
   def iterative_deepening(self, game_handler, coord, initial_value=0):
     start = time.time()
     value = initial_value
-    for depth in range(1, self.depth):
+    for depth in range(0, self.depth):
       # print(f"value is: {value}, depth is: {depth}")
       if time.time() - start >= (self.time_limit / 10):
         print(f"skipping at depth = {depth}")
@@ -293,8 +293,9 @@ class MiniMaxAgent(Agent):
     node_id = hash(node.board.board.tostring())
     n = self.table[node_id] if node_id in self.table else None
     # only retrieve nodes if they were explored with higher depth
-    if n and n.depth < depth:
-      print(f"(node_id is: {node_id} for move={move}) depth={depth}, n.depth={n.depth}, retrieving node_id stuff (alpha={alpha} and beta={beta})")
+    if n and depth <= n.depth:
+      # n = self.table[node_id]
+      # print(f"(node_id is: {node_id} for move={move}) depth={depth}, n.depth={n.depth}, retrieving node_id stuff (alpha={alpha} and beta={beta})")
       # print(f"move is: {move} and ")
       # if hasattr(n, 'lowerbound'):
       #   print(f"lowerbound is {n.lowerbound}")
@@ -311,8 +312,6 @@ class MiniMaxAgent(Agent):
       # print("not exiting")
       alpha = max(alpha, n.lowerbound)
       beta = min(beta, n.upperbound)
-    else:
-      print(f"(node_id is: {node_id} for move={move}) depth={depth}, aaah, not retrieving node_id stuff")
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
       val = self.evaluation(node.board.board, self.color, 1 - max_player, player, opponent, node.retrieve_captured_stones())
@@ -322,28 +321,29 @@ class MiniMaxAgent(Agent):
       val = sign * np.inf
       lim = [alpha, beta]
       # for new_move in node.child(player):
-      print(f"children of {move} (now depth = {depth})")
-      for new_move in self.child(node):
-        print(f"estimating {new_move}")
+      print(f"testing move = {move}, child list: {node.child_list}")
+      for new_move in node.child_list:#self.child(node):
+        if not node.board.is_empty(*new_move):
+          import ipdb; ipdb.set_trace()
         val = sign * min(sign * val,
                          sign * self.ab_memory(node, new_move, depth - 1,
                                              1 - max_player, None, lim[0],
                                              lim[1]))
         if sign * (lim[1 - max_player] - val) >= 0:
-          print("breaking?")
           break
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
     node.undo_move()
 
-    n = type('obj', (object,), {'lowerbound': -np.inf, 'upperbound': np.inf, 'depth': depth})()
-    if val <= alpha:
-      n.upperbound = val
-    if val > alpha and val < beta:
-      n.lowerbound = val
-      n.upperbound = val
-    if val >= beta:
-      n.lowerbound = val
-    self.table[node_id] = n
+    new_n = type('obj', (object,), {'lowerbound': -np.inf, 'upperbound': np.inf, 'depth': depth})()
+    if n is None or new_n.depth > n.depth:
+      if val <= alpha:
+        new_n.upperbound = val
+      if val > alpha and val < beta:
+        new_n.lowerbound = val
+        new_n.upperbound = val
+      if val >= beta:
+        new_n.lowerbound = val
+      self.table[node_id] = new_n
     return val
 
   def fail_hard(self, value, alpha, beta):
@@ -362,7 +362,8 @@ class MiniMaxAgent(Agent):
     while lower_bound < upper_bound:
       beta = (g + 1) if g == lower_bound else g
       print(f"counter = {counter} g={g:2E}, beta={beta}, lower_bound={lower_bound} < {upper_bound}=upper_bound")
-      g = self.fail_hard(self.ab_memory(node, move, depth, True, tree, beta - 1, beta), beta - 1, beta)
+      # g = self.fail_hard(self.ab_memory(node, move, depth, True, tree, beta - 1, beta), beta - 1, beta)
+      g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)
       if g < beta:
         upper_bound = g
       else:

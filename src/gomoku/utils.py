@@ -131,3 +131,16 @@ def were_impacted_slope(stones, x, y, dx, dy):
     if were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
       return True
   return False
+
+def nearby_stones(move, board):
+  x, y = move
+  size = board.size
+  nearby = []
+  for dx in [-1, 0, 1]:
+    for dy in [-1, 0, 1]:
+      x_p, y_p = x + dx, y + dy
+      if 0 <= x_p < size and 0 <= y_p < size and board.is_empty(x_p, y_p):
+        nearby.append((x_p, y_p))
+  if (x, y) in nearby:
+    nearby.remove((x, y))
+  return nearby
