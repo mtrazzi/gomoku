@@ -166,5 +166,8 @@ class Visualizer(object):
       return
     for _ in range(2):
       self.gameHandler.undo_move()
+    for player in self.gameHandler.players:
+      if hasattr(player, 'undo_scores'):
+        player.table = player.undo_table
     self.playerInput = False
     self.canvas.load_board(self.gameHandler)

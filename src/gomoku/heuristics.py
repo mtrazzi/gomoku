@@ -34,6 +34,28 @@ SCORE = {
   'stone_captured': 1e11,
 }
 
+# SCORE = {
+#   'XXXXX': 1e5,
+#   'OXXXX.': 5e4,
+#   'XXX.X': 5e4,
+#   'OOO.O': 1e1,
+#   '.XXXX.': 5e4,
+#   '.OOOO.': 1e4,
+#   '.XXX.': 1e3,
+#   '.OOO.': 5e2,
+#   'OXXX.': 1e2,
+#   'XOOOO.': 1e1,
+#   'XOOO.': 1e1,
+#   '.XX.': 5,
+#   '.X.': 1,
+#   'OX.': 0.5,
+#   'no open ends': 0,
+#   'OXX.': -1e3,
+#   'XOO.': -1e4,
+#   'multiple_threats': 1e5,
+#   'stone_captured': 1e4,
+# }
+
 def nb_consecutives(x, y, dx, dy, position, color):
   """Maximum number of consecutive stones of color `color` in the board position
   `position`,starting from (x,y) and using slope (dx, dy).
@@ -98,14 +120,11 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
     number of empty intersections next to the consecutive stones
   """
   m = len(position)
-  coord = coordinates(x, y, dx, dy, nb_consec)
-  # compute coordinates of open ends candidates before and after given points
-  p1 = [coord[0][0] - dx, coord[0][1] - dy]
-  p2 = [coord[-1][0] + dx, coord[-1][1] + dy]
-  ends = 0
-  ends += (0 <= p1[0] < m and 0 <= p1[1] < m) and position[p1[0]][p1[1]] == 0
-  ends += (0 <= p2[0] < m and 0 <= p2[1] < m) and position[p2[0]][p2[1]] == 0
-  return ends
+  x_1, y_1, x_2, y_2 = x - dx, y - dy, x + nb_consec * dx, y + nb_consec * dy
+  nb_open_ends = 0
+  nb_open_ends += (0 <= x_1 < m and 0 <= y_1 < m) and position[x_1][y_1] == 0
+  nb_open_ends += (0 <= x_2 < m and 0 <= y_2 < m) and position[x_2][y_2] == 0
+  return nb_open_ends
 
 def is_this_a_threat(x, y, dx, dy, position, color):
   return (position[x][y] == color and

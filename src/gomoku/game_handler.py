@@ -170,7 +170,6 @@ class GameHandler(object):
     return True
 
   def do_move(self, move, player):
-    # print(f"starting do_move ({move[0]}, {move[1]}), at that point child_list = {self.child_list}")
     self.state_history.append([player.last_move,
                                player.captures,
                                player.aligned_five_prev])
@@ -189,12 +188,10 @@ class GameHandler(object):
       for stone in nearby_stones(capture, self.board):
         if not is_there_stones_around(self.board.board, *stone) and stone in self.child_list:
           self.child_list.remove(stone)
-    # print(f"ending do_move ({move[0]}, {move[1]}), at that point child_list = {self.child_list}")
     return True
 
   def undo_move(self):
     x, y = self.move_history.pop()
-    # print(f"undoing move ({x}, {y}), at that point child_list = {self.child_list}")
     previous_dead = self.capture_history.pop()
     last_move, captures, aligned_five_prev = self.state_history.pop()
     stone = self.board.board[x][y]
@@ -217,7 +214,7 @@ class GameHandler(object):
     player.aligned_five_prev = aligned_five_prev
     if hasattr(player, 'undo_scores'):
       player.color_scores = player.undo_scores
-    # print(f"at the end of undoing move, child_list is {self.child_list} though")
+      player.table = player.undo_table
     return self
 
   def child(self, player):

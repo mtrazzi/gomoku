@@ -54,14 +54,15 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, color=1, depth=3, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
     self.debug = False
     self.simple_eval_depth = simple_eval_depth
     self.table = {}
-    self.time_limit = 0.5
+    self.undo_table = {}
+    self.time_limit = 20
     self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.color_scores_dict = {}
@@ -69,6 +70,7 @@ class MiniMaxAgent(Agent):
 
   def reset(self):
     self.table = {}
+    self.undo_table = {}
     self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.color_scores_dict = {}
@@ -95,8 +97,8 @@ class MiniMaxAgent(Agent):
     values = [self.iterative_deepening(gh, coord, corr_values[i]) for (i, coord) in enumerate(actual_candidates)]
     # return the best candidate
     move_to_play = actual_candidates[np.argmax(values)]
-    # in case of undo we still want to have the previous scores available
-    self.undo_scores = self.color_scores
+    # in case of undo we still want to have the previous scores/tables available
+    self.undo_scores, self.undo_table = copy.deepcopy(self.color_scores), copy.deepcopy(self.table)
     # only update color score according to move we're (actually) playing
     self.color_scores = self.color_scores_dict[move_to_play]
     print(f"total time: {time.time() - start}s")
@@ -106,7 +108,7 @@ class MiniMaxAgent(Agent):
     start = time.time()
     value = initial_value
     for depth in range(0, self.depth):
-      # print(f"value is: {value}, depth is: {depth}")
+      print(f"value is: {value}, depth is: {depth}")
       if time.time() - start >= (self.time_limit / 10):
         print(f"skipping at depth = {depth}")
         return value
@@ -115,6 +117,7 @@ class MiniMaxAgent(Agent):
     # print(f"evaluating move {coord} took {time.time()-start}")
     return value
 
+  @profile
   def simple_evaluation(self, game_handler):
     """Returns a score map for possible moves using a depth = 1 evaluation.
 
@@ -292,14 +295,10 @@ class MiniMaxAgent(Agent):
     node_id = hash(node.board.board.tostring())
     n = self.table[node_id] if node_id in self.table else None
     # only retrieve nodes if they were explored with higher depth
-    if n and depth <= n.depth:
-      # n = self.table[node_id]
-      # print(f"(node_id is: {node_id} for move={move}) depth={depth}, n.depth={n.depth}, retrieving node_id stuff (alpha={alpha} and beta={beta})")
-      # print(f"move is: {move} and ")
-      # if hasattr(n, 'lowerbound'):
-      #   print(f"lowerbound is {n.lowerbound}")
-      # if hasattr(n, 'upperbound'):
-      #   print(f"upperbound is {n.upperbound}")
+    # if n:
+    #   print(f"for node_id = {node_id}, n.lowerbound={n.lowerbound} < {n.upperbound}=n.upperbound")
+    if n and (depth - n.depth) % 2 == 0 and depth <= n.depth:
+      # print(f"depth={depth} and n.depth={n.depth}")
       if n.lowerbound >= beta:
         node.undo_move()
         # print(f"exiting because >= beta={beta}")
