@@ -54,7 +54,7 @@ class MiniMaxAgent(Agent):
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   """
-  def __init__(self, color=1, depth=3, max_top_moves=5, simple_eval_depth=0):
+  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
@@ -92,29 +92,44 @@ class MiniMaxAgent(Agent):
     score_map = self.simple_evaluation(gh)
     print(f"time for simple evaluation: {time.time() - start}s")
     # Find the list of best moves using this score map
+    np.set_printoptions(linewidth=np.inf, precision=0)
+    # print("\n\n\n\n##################  BEFORE  ##################\n\n\n\n")
+    # print(score_map)
+    # print(self.color_scores[0])
+    # print(self.color_scores[1])
+    # print("\n\n\n\n####################################\n\n\n\n")
     actual_candidates, corr_values = self.best_moves(score_map) #FIXME to remove double threes
     # actual_candidates = [move for move in candidates if gh.can_place(*move, player)]
+    # print(f"top candidates: {actual_candidates}")
     values = [self.iterative_deepening(gh, coord, corr_values[i]) for (i, coord) in enumerate(actual_candidates)]
     # return the best candidate
     move_to_play = actual_candidates[np.argmax(values)]
     # in case of undo we still want to have the previous scores/tables available
     self.undo_scores, self.undo_table = copy.deepcopy(self.color_scores), copy.deepcopy(self.table)
     # only update color score according to move we're (actually) playing
+    # if move_to_play[0] == 3 and move_to_play[1] == 9:
+    #   import ipdb; ipdb.set_trace()
     self.color_scores = self.color_scores_dict[move_to_play]
-    print(f"total time: {time.time() - start}s")
+    # print("\n\n\n\n################  AFTER  ##################\n\n\n\n")
+    # # print(score_map)
+    # print(self.color_scores[0])
+    # print(self.color_scores[1])
+    # print("\n\n\n\n####################################\n\n\n\n")
+    # print(f"total time: {time.time() - start}s")
     return move_to_play
 
   def iterative_deepening(self, game_handler, coord, initial_value=0):
     start = time.time()
     value = initial_value
-    for depth in range(0, self.depth):
-      print(f"value is: {value}, depth is: {depth}")
+    for depth in range(1, self.depth):
+      # print(f"\n\n[ITERATIVE DEEPENING STEP] move is {coord}, value is: {value}, depth is: {depth}")
+      # print(f"at this point child list is: {game_handler.child_list}")
       if time.time() - start >= (self.time_limit / 10):
-        print(f"skipping at depth = {depth}")
+        # print(f"[EXIT OF ITERATIVE DEEPENING] skipping at depth = {depth}\n\n")
         return value
       value = self.mtdf(game_handler, coord, depth, None, value)
       # value = self.ab_memory(game_handler, coord, depth)
-    # print(f"evaluating move {coord} took {time.time()-start}")
+    # print(f"[EXIT OF ITERATIVE DEEPENING] evaluating move {coord} took {time.time()-start}\n\n")
     return value
 
   @profile
@@ -297,7 +312,8 @@ class MiniMaxAgent(Agent):
     # only retrieve nodes if they were explored with higher depth
     # if n:
     #   print(f"for node_id = {node_id}, n.lowerbound={n.lowerbound} < {n.upperbound}=n.upperbound")
-    if n and (depth - n.depth) % 2 == 0 and depth <= n.depth:
+    if n and depth <= n.depth: #and (depth - n.depth) % 2 == 0 and depth <= n.depth:
+      # print("retrieving")
       # print(f"depth={depth} and n.depth={n.depth}")
       if n.lowerbound >= beta:
         node.undo_move()
@@ -310,8 +326,11 @@ class MiniMaxAgent(Agent):
       # print("not exiting")
       alpha = max(alpha, n.lowerbound)
       beta = min(beta, n.upperbound)
+    # else:
+      # print("not retrieving")
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
+      # print(f"evaluation for move = {move}")
       val = self.evaluation(node.board.board, self.color, 1 - max_player, player, opponent, node.retrieve_captured_stones())
     else:
       # using a sign to avoid two conditions in minimax
@@ -320,6 +339,7 @@ class MiniMaxAgent(Agent):
       lim = [alpha, beta]
       # for new_move in node.child(player):
       # print(f"testing move = {move}, child list: {node.child_list}")
+      # print(f"\nestimating move {move} at depth = {depth}")
       for new_move in node.child_list:#self.child(node):
         val = sign * min(sign * val,
                          sign * self.ab_memory(node, new_move, depth - 1,
@@ -329,6 +349,7 @@ class MiniMaxAgent(Agent):
           break
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
     node.undo_move()
+    # print(f"after undo_move, child list was: {node.child_list}")
 
     new_n = type('obj', (object,), {'lowerbound': -np.inf, 'upperbound': np.inf, 'depth': depth})()
     if n is None or new_n.depth > n.depth:
@@ -357,6 +378,7 @@ class MiniMaxAgent(Agent):
     counter = 0
     while lower_bound < upper_bound:
       beta = (g + 1) if g == lower_bound else g
+      counter += 1
       # print(f"counter = {counter} g={g:2E}, beta={beta}, lower_bound={lower_bound} < {upper_bound}=upper_bound")
       # g = self.fail_hard(self.ab_memory(node, move, depth, True, tree, beta - 1, beta), beta - 1, beta)
       g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)

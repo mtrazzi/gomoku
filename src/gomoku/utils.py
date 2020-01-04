@@ -2,15 +2,6 @@ import numpy as np
 
 SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
 
-import builtins
-
-try:
-    builtins.profile
-except AttributeError:
-    # No line profiler, provide a pass-through version
-    def profile(func): return func
-    builtins.profile = profile
-
 
 def coordinates(x, y, dx, dy, nb_consecutive=5):
   """Coordinates of consecutive intersections from (x,y) directed by (dx,dy)."""
@@ -124,7 +115,6 @@ def were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
   else:
     return -4 <= dy_stone <= 4
 
-@profile
 def were_impacted_slope(stones, x, y, dx, dy):
   for stone in stones:
     dx_stone, dy_stone = x - stone[0], y - stone[1]

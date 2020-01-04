@@ -198,6 +198,12 @@ def score_for_color(position, color, my_turn, stones, past_scores):
       tot += dtot
       past_scores[x][y] = dtot
   # return tot + advantage_combinations(winning_groups), past_scores
+  # np.set_printoptions(linewidth=np.inf, precision=0)
+  # from gomoku.board import Board
+  # board = Board()
+  # board.board = position
+  # print(board)
+  # print(past_scores)
   return tot, past_scores
 
 
@@ -222,7 +228,7 @@ def simple_heuristic(position, color, my_turn, stones, past_scores):
   """
   first_score, new_past_scores_1 = score_for_color(position, color, my_turn, stones, past_scores[0])
   second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, stones, past_scores[1])
-  # print(f"{first_score:2E}-{second_score:2E}={first_score-second_score:2E}")
+  # print(f"{first_score-second_score:2E} = {first_score:2E} - {second_score:2E}")
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 

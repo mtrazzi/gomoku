@@ -174,7 +174,7 @@ class GameHandler(object):
                                player.captures,
                                player.aligned_five_prev])
     self.board.place(*move, player.color)
-    player.last_move = move
+    player.last_move = tuple(move)
     self.move_history.append(move)
     captures = Rules.capture(self.board, player)
     if captures:
@@ -188,6 +188,11 @@ class GameHandler(object):
       for stone in nearby_stones(capture, self.board):
         if not is_there_stones_around(self.board.board, *stone) and stone in self.child_list:
           self.child_list.remove(stone)
+    # updating color_scores when human plays something
+    opponent = self.players[1 if player.color == 1 else 0]
+    if hasattr(opponent, 'color_scores'):
+      opponent.evaluation(self.board.board, opponent.color, True, player, opponent, self.retrieve_captured_stones())
+      opponent.color_scores = opponent.color_scores_dict[player.last_move]
     return True
 
   def undo_move(self):
@@ -198,6 +203,8 @@ class GameHandler(object):
     player = self.players[0 if stone == 1 else 1]
     opponent = self.players[1 if stone == 1 else 0]
     self.board.remove(x, y)
+    if is_there_stones_around(self.board.board, x, y) and (x, y) not in self.child_list:
+      self.child_list.append((x, y))
     for stone in nearby_stones((x, y), self.board):
       if stone in self.child_list and not is_there_stones_around(self.board.board, *stone):
         self.child_list.remove(stone)
@@ -212,8 +219,8 @@ class GameHandler(object):
     player.last_move = last_move
     player.captures = captures
     player.aligned_five_prev = aligned_five_prev
-    if hasattr(player, 'undo_scores'):
-      player.color_scores = player.undo_scores
+    if hasattr(player, 'undo_table'):
+      # player.color_scores = player.undo_scores
       player.table = player.undo_table
     return self
 
