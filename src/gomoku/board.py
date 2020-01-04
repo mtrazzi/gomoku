@@ -29,10 +29,10 @@ class Board(object):
   def __str__(self):
     representation = f"ₓ\\ʸ"
     for i in range(self.size):
-      representation += f"{(i+1):2} "
+      representation += f"{(i):2} "
     representation += "\n"
     for i in range(self.size):
-      representation += f"{(i+1):2} "
+      representation += f"{(i):2} "
       for j in range(self.size):
         x = self.board[i][j]
         if j in [3, 9, 15] and i in [3, 9, 15] and x == 0:

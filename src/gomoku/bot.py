@@ -92,7 +92,6 @@ class MiniMaxAgent(Agent):
     # Find the list of best moves using this score map
     actual_candidates, corr_values = self.best_moves(score_map) #FIXME to remove double threes
     # actual_candidates = [move for move in candidates if gh.can_place(*move, player)]
-    print(corr_values)
     values = [self.iterative_deepening(gh, coord, corr_values[i]) for (i, coord) in enumerate(actual_candidates)]
     # return the best candidate
     move_to_play = actual_candidates[np.argmax(values)]
@@ -113,7 +112,7 @@ class MiniMaxAgent(Agent):
         return value
       value = self.mtdf(game_handler, coord, depth, None, value)
       # value = self.ab_memory(game_handler, coord, depth)
-    print(f"evaluating move {coord} took {time.time()-start}")
+    # print(f"evaluating move {coord} took {time.time()-start}")
     return value
 
   def simple_evaluation(self, game_handler):
@@ -321,10 +320,8 @@ class MiniMaxAgent(Agent):
       val = sign * np.inf
       lim = [alpha, beta]
       # for new_move in node.child(player):
-      print(f"testing move = {move}, child list: {node.child_list}")
+      # print(f"testing move = {move}, child list: {node.child_list}")
       for new_move in node.child_list:#self.child(node):
-        if not node.board.is_empty(*new_move):
-          import ipdb; ipdb.set_trace()
         val = sign * min(sign * val,
                          sign * self.ab_memory(node, new_move, depth - 1,
                                              1 - max_player, None, lim[0],
@@ -361,7 +358,7 @@ class MiniMaxAgent(Agent):
     counter = 0
     while lower_bound < upper_bound:
       beta = (g + 1) if g == lower_bound else g
-      print(f"counter = {counter} g={g:2E}, beta={beta}, lower_bound={lower_bound} < {upper_bound}=upper_bound")
+      # print(f"counter = {counter} g={g:2E}, beta={beta}, lower_bound={lower_bound} < {upper_bound}=upper_bound")
       # g = self.fail_hard(self.ab_memory(node, move, depth, True, tree, beta - 1, beta), beta - 1, beta)
       g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)
       if g < beta:

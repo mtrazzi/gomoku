@@ -170,6 +170,7 @@ class GameHandler(object):
     return True
 
   def do_move(self, move, player):
+    # print(f"starting do_move ({move[0]}, {move[1]}), at that point child_list = {self.child_list}")
     self.state_history.append([player.last_move,
                                player.captures,
                                player.aligned_five_prev])
@@ -181,21 +182,19 @@ class GameHandler(object):
       self.old_old_capture_history = copy.deepcopy(self.old_capture_history)
       self.old_capture_history = copy.deepcopy(self.capture_history)
     self.capture_history.append(captures)
-    if (8, 6) in nearby_stones(move, self.board):
-      print(f"OMGGGGG it was for move == {move}")
-      print(self.board)
     self.child_list = list(set(self.child_list + nearby_stones(move, self.board)))
-    if move in self.child_list:
-      self.child_list.remove(move)
+    if (move[0], move[1]) in self.child_list:
+      self.child_list.remove((move[0], move[1]))
     for capture in captures:
       for stone in nearby_stones(capture, self.board):
         if not is_there_stones_around(self.board.board, *stone) and stone in self.child_list:
           self.child_list.remove(stone)
+    # print(f"ending do_move ({move[0]}, {move[1]}), at that point child_list = {self.child_list}")
     return True
 
   def undo_move(self):
     x, y = self.move_history.pop()
-    print(f"undoing move ({x}, {y}), at that point child_list = {self.child_list}")
+    # print(f"undoing move ({x}, {y}), at that point child_list = {self.child_list}")
     previous_dead = self.capture_history.pop()
     last_move, captures, aligned_five_prev = self.state_history.pop()
     stone = self.board.board[x][y]
@@ -207,18 +206,18 @@ class GameHandler(object):
         self.child_list.remove(stone)
     for x, y in previous_dead:
       self.board.place(x, y, opponent.color)
+      if (x, y) in self.child_list:
+        self.child_list.remove((x, y))
     for x, y in previous_dead:
       for stone in nearby_stones((x, y), self.board):
         if stone not in self.child_list and stone not in previous_dead and self.board.is_empty(*stone):
-          if stone[0] == 8 and stone[1] == 6:
-            print(f"adding THE stone into the child list (for ref., (x, y)=({x}, {y}))")
           self.child_list.append(stone)
     player.last_move = last_move
     player.captures = captures
     player.aligned_five_prev = aligned_five_prev
     if hasattr(player, 'undo_scores'):
       player.color_scores = player.undo_scores
-    print(f"at the end of undoing move, child_list is {self.child_list} though")
+    # print(f"at the end of undoing move, child_list is {self.child_list} though")
     return self
 
   def child(self, player):
