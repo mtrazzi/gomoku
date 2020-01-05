@@ -1,7 +1,6 @@
 import numpy as np
 
-from gomoku.utils import (SLOPES, all_equal, coordinates, opposite,
-                          were_impacted_slope)
+from gomoku.utils import SLOPES, opposite, were_impacted_slope
 
 MAX_CAPTURES = 10
 SCORE = {
@@ -174,8 +173,7 @@ def score_for_color(position, color, my_turn, stones=[], past_scores=None):
         dtot += threat_score(x, y, dx, dy, position, color, my_turn)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
-          can_five = possible_five(position, x, y, dx, dy, nb_cons, color)
-          dtot += score(nb_cons, op_ends, my_turn) * (can_five + 1)
+          dtot += score(nb_cons, op_ends, my_turn)
           winning_groups += winning_stones(nb_cons, op_ends)
       tot += dtot
       if past_scores is not None:
@@ -242,24 +240,6 @@ def past_heuristic(last_move, current_move):
     return 0
   return (-np.linalg.norm(np.array(last_move)-np.array(current_move)) *
           SCORE['past_heuristic'])
-
-
-def possible_five(position, x, y, dx, dy, nb_consec, stones_color):
-  """Checks if an alignment has enough space to develop into a 5-in-a-row."""
-  if nb_consec >= 5:
-    return True
-  if nb_consec < 2:
-    return False
-  nb_stones_left = 5 - nb_consec
-  for i in range(nb_stones_left + 1):
-    # testing if it's possible to have i free intersections, then `nb_consec`
-    # stones of color `stones_color` and then 5 - i free intersections
-    coord = coordinates(x - i * dx, y - i * dy, dx, dy, 5)
-    before = coord[:i]
-    after = coord[-(nb_stones_left-i):] if nb_stones_left-i > 0 else []
-    if all_equal(before + after, position, 0):
-      return True
-  return False
 
 
 def winning_stones(consecutive, open_ends):

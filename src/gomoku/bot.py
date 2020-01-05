@@ -13,7 +13,7 @@ CHILD_HYPERPARAM = 10
 
 
 def minimax_agent_wrapper(algorithm_name):
-  def minimax_agent(color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
+  def minimax_agent(color=1, depth=2, max_top_moves=10, simple_eval_depth=0):
     return MiniMaxAgent(color, depth, max_top_moves, simple_eval_depth,
                         algorithm_name)
   return minimax_agent
