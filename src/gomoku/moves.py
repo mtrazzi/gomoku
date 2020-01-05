@@ -2,6 +2,8 @@ import numpy as np
 
 from gomoku.heuristic import move_heuristic
 
+MAX_MOVES = 15
+
 
 def select_past_moves(move_history, depth):
   selected = 5
@@ -28,27 +30,6 @@ def generate_adjacents(x, y, depth):
   elif depth >= 2:
     adjacents = adjacents[::2]
   return adjacents + [x, y]
-
-
-# def generate_moves(player, depth, maximizing):
-#   current = player if maximizing else player.opponent
-#   gameHandler = player.gameHandler
-#   children = []
-
-#   for x, y in select_past_moves(gameHandler.move_history, depth):
-#     coords = generate_adjacents(x, y, depth)
-#     for v, w in coords:
-#       if (v, w) not in children and gameHandler.can_place(v, w, current):
-#         children.append((v, w))
-#   if len(gameHandler.move_history) == 0:
-#     children.append((9, 9))
-#   if len(children) == 0:
-#     return [tuple(np.random.randint(19, size=2))]
-
-#   return children
-
-
-MAX_MOVES = 15
 
 
 def generate_moves(player, depth, maximizing):

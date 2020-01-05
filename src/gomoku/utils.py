@@ -90,16 +90,20 @@ def get_player(gameHandler, color, maximizingPlayer):
   opponent = players[1] if players[0].color == color else players[0]
   return player if maximizingPlayer else opponent
 
+
 def impact(stone, x, y):
   dx, dy = abs(stone[0] - x), abs(stone[1] - y)
   return (dx < 6 and dy == 0) or (dy < 6 and dx == 0) or (dx == dy and dx < 6)
 
+
 def were_impacted(stones, x, y):
   return np.any([impact(move, x, y) for move in stones])
+
 
 def impact_slope(stone, x, y, dx, dy):
   delta_x, delta_y = np.sign(stone[0] - x), np.sign(stone[1] - y)
   return impact(stone, x, y) and dx == delta_x and dy == delta_y
+
 
 def were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
   if dx_stone == 0 and dy_stone == 0:
@@ -115,12 +119,14 @@ def were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
   else:
     return -4 <= dy_stone <= 4
 
+
 def were_impacted_slope(stones, x, y, dx, dy):
   for stone in stones:
     dx_stone, dy_stone = x - stone[0], y - stone[1]
     if were_impacted_slope_aux(dx_stone, dy_stone, dx, dy):
       return True
   return False
+
 
 def nearby_stones(move, board):
   x, y = move
@@ -134,3 +140,22 @@ def nearby_stones(move, board):
   if (x, y) in nearby:
     nearby.remove((x, y))
   return nearby
+
+
+def update_child_after_move(game_handler, captures, last_move):
+  game_handler.child_list = list(set(game_handler.child_list +
+                                     nearby_stones(last_move,
+                                                   game_handler.board)))
+  if (last_move[0], last_move[1]) in game_handler.child_list:
+    game_handler.child_list.remove((last_move[0], last_move[1]))
+  for capture in captures:
+    for stone in nearby_stones(capture, game_handler.board):
+      if (not is_there_stones_around(game_handler.board.board, *stone) and
+          stone in game_handler.child_list):
+        game_handler.child_list.remove(stone)
+
+
+def update_color_scores(game_handler, player, opponent, move):
+  opponent.evaluation(game_handler.board.board, opponent.color, True, player,
+                      opponent, game_handler.retrieve_captured_stones())
+  opponent.color_scores = opponent.color_scores_dict[move]

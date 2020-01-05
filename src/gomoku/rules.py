@@ -3,15 +3,6 @@ import numpy as np
 from gomoku.utils import SLOPES, all_equal, coordinates, indefensible_four
 
 
-import builtins
-
-try:
-    builtins.profile
-except AttributeError:
-    # No line profiler, provide a pass-through version
-    def profile(func): return func
-    builtins.profile = profile
-
 class Rules(object):
   """Class Rules
   """
@@ -24,7 +15,6 @@ class Rules(object):
     return len(Rules.capture(board, player, remove=False)) > 0
 
   @staticmethod
-  @profile
   def capture(board, player, remove=True):
     """Manage the Capture Rule
     Only two stone can be "captured" at the same time only if they are

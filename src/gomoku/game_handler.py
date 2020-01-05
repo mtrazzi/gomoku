@@ -1,10 +1,11 @@
-import time
 import copy
+import time
 
 from gomoku.agent import Agent
 from gomoku.agents import MiniMaxAgent
 from gomoku.rules import Rules
-from gomoku.utils import is_there_stones_around, nearby_stones
+from gomoku.utils import (is_there_stones_around, nearby_stones,
+                          update_child_after_move, update_color_scores)
 
 
 class GameHandler(object):
@@ -119,7 +120,7 @@ class GameHandler(object):
 
     Return
     ------
-    succed: bool
+    succeed: bool
       True if we can play at this intersection, else False
     """
     player = self.players[self.current]
@@ -176,23 +177,21 @@ class GameHandler(object):
     self.board.place(*move, player.color)
     player.last_move = tuple(move)
     self.move_history.append(move)
+
+    # updating captures
     captures = Rules.capture(self.board, player)
     if captures:
       self.old_old_capture_history = copy.deepcopy(self.old_capture_history)
       self.old_capture_history = copy.deepcopy(self.capture_history)
     self.capture_history.append(captures)
-    self.child_list = list(set(self.child_list + nearby_stones(move, self.board)))
-    if (move[0], move[1]) in self.child_list:
-      self.child_list.remove((move[0], move[1]))
-    for capture in captures:
-      for stone in nearby_stones(capture, self.board):
-        if not is_there_stones_around(self.board.board, *stone) and stone in self.child_list:
-          self.child_list.remove(stone)
+
+    # updating child list
+    update_child_after_move(self, captures, move)
+
     # updating color_scores when human plays something
     opponent = self.players[1 if player.color == 1 else 0]
     if hasattr(opponent, 'color_scores'):
-      opponent.evaluation(self.board.board, opponent.color, True, player, opponent, self.retrieve_captured_stones())
-      opponent.color_scores = opponent.color_scores_dict[player.last_move]
+      update_color_scores(self, player, opponent, player.last_move)
     return True
 
   def undo_move(self):
@@ -203,10 +202,12 @@ class GameHandler(object):
     player = self.players[0 if stone == 1 else 1]
     opponent = self.players[1 if stone == 1 else 0]
     self.board.remove(x, y)
-    if is_there_stones_around(self.board.board, x, y) and (x, y) not in self.child_list:
+    if (is_there_stones_around(self.board.board, x, y) and
+        (x, y) not in self.child_list):
       self.child_list.append((x, y))
     for stone in nearby_stones((x, y), self.board):
-      if stone in self.child_list and not is_there_stones_around(self.board.board, *stone):
+      if (stone in self.child_list and not
+          is_there_stones_around(self.board.board, *stone)):
         self.child_list.remove(stone)
     for x, y in previous_dead:
       self.board.place(x, y, opponent.color)
@@ -214,13 +215,13 @@ class GameHandler(object):
         self.child_list.remove((x, y))
     for x, y in previous_dead:
       for stone in nearby_stones((x, y), self.board):
-        if stone not in self.child_list and stone not in previous_dead and self.board.is_empty(*stone):
+        if (stone not in self.child_list and stone not in previous_dead and
+            self.board.is_empty(*stone)):
           self.child_list.append(stone)
     player.last_move = last_move
     player.captures = captures
     player.aligned_five_prev = aligned_five_prev
     if hasattr(player, 'undo_table'):
-      # player.color_scores = player.undo_scores
       player.table = player.undo_table
     return self
 
@@ -250,9 +251,9 @@ class GameHandler(object):
 
   def retrieve_captured_stones(self):
     all_captures = [move for captures in self.capture_history
-                         for move in captures]
+                    for move in captures]
     all_captures_old = [move for captures in self.old_old_capture_history
-                         for move in captures]
+                        for move in captures]
     return list(set(all_captures) - set(all_captures_old))
 
   def __str__(self):

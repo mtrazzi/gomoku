@@ -1,16 +1,7 @@
 import numpy as np
-import time
 
-from gomoku.utils import SLOPES, all_equal, coordinates, opposite, were_impacted_slope
-
-import builtins
-
-try:
-    builtins.profile
-except AttributeError:
-    # No line profiler, provide a pass-through version
-    def profile(func): return func
-    builtins.profile = profile
+from gomoku.utils import (SLOPES, all_equal, coordinates, opposite,
+                          were_impacted_slope)
 
 SCORE = {
   'XXXXX': 1e15,
@@ -34,27 +25,6 @@ SCORE = {
   'stone_captured': 1e11,
 }
 
-# SCORE = {
-#   'XXXXX': 1e5,
-#   'OXXXX.': 5e4,
-#   'XXX.X': 5e4,
-#   'OOO.O': 1e1,
-#   '.XXXX.': 5e4,
-#   '.OOOO.': 1e4,
-#   '.XXX.': 1e3,
-#   '.OOO.': 5e2,
-#   'OXXX.': 1e2,
-#   'XOOOO.': 1e1,
-#   'XOOO.': 1e1,
-#   '.XX.': 5,
-#   '.X.': 1,
-#   'OX.': 0.5,
-#   'no open ends': 0,
-#   'OXX.': -1e3,
-#   'XOO.': -1e4,
-#   'multiple_threats': 1e5,
-#   'stone_captured': 1e4,
-# }
 
 def nb_consecutives(x, y, dx, dy, position, color):
   """Maximum number of consecutive stones of color `color` in the board position
@@ -80,13 +50,14 @@ def nb_consecutives(x, y, dx, dy, position, color):
   max_consec: int
     Max. number of consecutive stones of color starting at x,y, with slope dx/dy
   """
+  m = len(position)
   # don't start counting if you're not the first stone of a series
-  if ((0 <= x - dx < len(position)) and (0 <= y - dy < len(position))
+  if ((0 <= x - dx < m) and (0 <= y - dy < m)
       and position[x - dx][y - dy] == color):
     return 0
   # check what is the biggest nb_coordinates that you can fit in direction dx/dy
   nb_consec = 0
-  while (0 <= x < len(position)) and (0 <= y < len(position) and position[x][y] == color):
+  while (0 <= x < m) and (0 <= y < m and position[x][y] == color):
     nb_consec += 1
     x += dx
     y += dy
@@ -126,32 +97,46 @@ def nb_open_ends(x, y, dx, dy, nb_consec, position):
   nb_open_ends += (0 <= x_2 < m and 0 <= y_2 < m) and position[x_2][y_2] == 0
   return nb_open_ends
 
+
 def is_this_a_threat(x, y, dx, dy, position, color):
   return (position[x][y] == color and
-         (is_this_a_threat_2(x, y, dx, dy, position, color) or
-         is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color)))
+          (is_this_a_threat_2(x, y, dx, dy, position, color) or
+           is_this_a_threat_1(x - dx, y - dy, dx, dy, position, color)))
 
 
 def is_this_a_threat_2(x, y, dx, dy, position, color):
   if not (0 <= x + 4 * dx < len(position) and 0 <= y + 4 * dy < len(position)):
     return False
-  c_1, c_2, c_3, c_4, c_5 = position[x][y], position[x + dx][y + dy], position[x + 2 * dx][y + 2 * dy], position[x + 3 * dx][y + 3 * dy], position[x + 4 * dx][y + 4 * dy]
+  c_1, c_2, c_3, c_4, c_5 = (position[x][y],
+                             position[x + dx][y + dy],
+                             position[x + 2 * dx][y + 2 * dy],
+                             position[x + 3 * dx][y + 3 * dy],
+                             position[x + 4 * dx][y + 4 * dy])
   # case of OOO.O, 0.000 or OO.OO
   return ((c_1 == c_2 == c_3 == c_5 == color and c_4 == 0) or
-      (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0) or
-      (c_1 == c_2 == c_4 == c_5 == color and c_3 == 0))
+          (c_1 == c_3 == c_4 == c_5 == color and c_2 == 0) or
+          (c_1 == c_2 == c_4 == c_5 == color and c_3 == 0))
+
 
 def is_this_a_threat_1(x, y, dx, dy, position, color):
   # case of .OO.O. or .O.OO.
-  if (not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position)) or not ((0 <= x < len(position) and 0 <= y < len(position)))):
+  if (not (0 <= x + 5 * dx < len(position) and 0 <= y + 5 * dy < len(position))
+      or not ((0 <= x < len(position) and 0 <= y < len(position)))):
     return False
-  c_1, c_2, c_3, c_4, c_5, c_6 = position[x][y], position[x + dx][y + dy], position[x + 2 * dx][y + 2 * dy], position[x + 3 * dx][y + 3 * dy], position[x + 4 * dx][y + 4 * dy], position[x + 5 * dx][y + 5 * dy]
+  c_1, c_2, c_3, c_4, c_5, c_6 = (position[x][y],
+                                  position[x + dx][y + dy],
+                                  position[x + 2 * dx][y + 2 * dy],
+                                  position[x + 3 * dx][y + 3 * dy],
+                                  position[x + 4 * dx][y + 4 * dy],
+                                  position[x + 5 * dx][y + 5 * dy])
   return ((c_1 == 0 and c_6 == 0 and c_2 == color and c_5 == color) and
-         ((c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)))
+          ((c_3 == color and c_4 == 0) or (c_3 == 0 and c_4 == color)))
+
 
 def threat_score(x, y, dx, dy, position, color, my_turn):
   threat = is_this_a_threat(x, y, dx, dy, position, color)
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
+
 
 def score_for_color(position, color, my_turn, stones, past_scores):
   """Looking only at the stones of color `color`, and knowing that it's
@@ -173,9 +158,7 @@ def score_for_color(position, color, my_turn, stones, past_scores):
   tot_score: int
     How much total score do I get based on another function `score`.
   """
-  tot = 0
-  # winning_groups = 0
-  l = []
+  tot, winning_groups = 0, 0
   for x in range(len(position)):
     for y in range(len(position)):
       dtot = 0
@@ -185,26 +168,16 @@ def score_for_color(position, color, my_turn, stones, past_scores):
       for (dx, dy) in SLOPES:
         if not were_impacted_slope(stones, x, y, dx, dy):
           continue
-        if (x, y) not in l:
-          l.append((x,y))
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         dtot += threat_score(x, y, dx, dy, position, color, my_turn)
         if nb_cons > 0:
           op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
-          # can_five = possible_five(position, x, y, dx, dy, nb_cons,
-                                  #  color)
-          dtot += score(nb_cons, op_ends, my_turn) # * (10 * can_five + 1)
-          # winning_groups += winning_stones(nb_cons, op_ends)
+          can_five = possible_five(position, x, y, dx, dy, nb_cons, color)
+          dtot += score(nb_cons, op_ends, my_turn) * (can_five + 1)
+          winning_groups += winning_stones(nb_cons, op_ends)
       tot += dtot
       past_scores[x][y] = dtot
-  # return tot + advantage_combinations(winning_groups), past_scores
-  # np.set_printoptions(linewidth=np.inf, precision=0)
-  # from gomoku.board import Board
-  # board = Board()
-  # board.board = position
-  # print(board)
-  # print(past_scores)
-  return tot, past_scores
+  return tot + advantage_combinations(winning_groups), past_scores
 
 
 def simple_heuristic(position, color, my_turn, stones, past_scores):
@@ -226,9 +199,11 @@ def simple_heuristic(position, color, my_turn, stones, past_scores):
   score: int
     How the situation looks like taking into account the two players.
   """
-  first_score, new_past_scores_1 = score_for_color(position, color, my_turn, stones, past_scores[0])
-  second_score, new_past_scores_2 = score_for_color(position, opposite(color), not my_turn, stones, past_scores[1])
-  # print(f"{first_score-second_score:2E} = {first_score:2E} - {second_score:2E}")
+  first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
+                                                   stones, past_scores[0])
+  second_score, new_past_scores_2 = score_for_color(position, opposite(color),
+                                                    not my_turn, stones,
+                                                    past_scores[1])
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 
@@ -273,7 +248,7 @@ def possible_five(position, x, y, dx, dy, nb_consec, stones_color):
   nb_stones_left = 5 - nb_consec
   for i in range(nb_stones_left + 1):
     # testing if it's possible to have i free intersections, then `nb_consec`
-    # stones of color `stones_color` and then 5 - i free interesections
+    # stones of color `stones_color` and then 5 - i free intersections
     coord = coordinates(x - i * dx, y - i * dy, dx, dy, 5)
     before = coord[:i]
     after = coord[-(nb_stones_left-i):] if nb_stones_left-i > 0 else []
@@ -329,7 +304,6 @@ def score(consecutive, open_ends, my_turn):
       return SCORE['.XXX.'] if my_turn else SCORE['.OOO.']
   elif consecutive == 2:
     if open_ends == 1:
-      # having your stones captured is really bad!
       return SCORE['OXX.'] if my_turn else SCORE['XOO.']
     elif open_ends == 2:
       return SCORE['.XX.']

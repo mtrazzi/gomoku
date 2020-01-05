@@ -35,16 +35,16 @@ BEST_MOVES = {"please_capture": [(12, 12)], "can_do_four": [(11, 8), (11, 12)],
 EXPERT_MOVES = {"strong_move": [(11, 10)]}
 FORBIDDEN_MOVES = {"double_three": [(9, 9)]}
 
+
 def print_debug_eval(arr):
   np.set_printoptions(linewidth=np.inf, precision=4)
   tmp = np.array([i for i in range(1, 20)])
   add_up = np.vstack([tmp, arr])
   left_col = np.array([i for i in range(20)])
   big_arr = np.zeros((20, 20))
-  big_arr[:,:1] = left_col.reshape(20,1)
-  big_arr[:,1:] = add_up
+  big_arr[:, :1] = left_col.reshape(20, 1)
+  big_arr[:, 1:] = add_up
   print(big_arr)
-
 
 
 def test_possible_five():
@@ -149,9 +149,6 @@ def test_simple_evaluation():
         print_debug_eval(score_map)
     candidate = np.unravel_index(np.argmax(score_map, axis=None),
                                  score_map.shape)
-    # print(NODES[name])
-    # print(f"for above board, candidate was: {human_move(candidate)}")
-    # print(*score_map, sep='\n')
     assert (human_move(candidate) in best_moves)
 
 
@@ -161,8 +158,6 @@ def test_best_move(depth, solution):
   name, best_moves = solution
   w_ag = MiniMaxAgent(WHITE, depth=depth)
   candidate = w_ag.find_move(NODES[name])
-  # print(NODES[name])
-  # print(f"for above board, candidate was: {human_move(candidate)}")
   assert (human_move(candidate) in best_moves)
 
 
@@ -170,19 +165,5 @@ def test_best_move(depth, solution):
 def test_forbidden_move(problem):
   name, best_moves = problem
   w_ag = MiniMaxAgent(WHITE, depth=0)
-  score_map = w_ag.simple_evaluation(NODES[name])
   candidate = w_ag.find_move(NODES[name])
-  # print(NODES[name])
-  # print(f"for above board, candidate was: {human_move(candidate)}")
-  # we need to make sure the move returned by the bot is NOT a double three
   assert (human_move(candidate) not in best_moves)
-
-# @pytest.mark.parametrize("depth", [3])
-# @pytest.mark.parametrize("solution", EXPERT_MOVES.items())
-# def test_expert_moves(depth, solution):
-#   name, best_moves = solution
-#   w_ag = MiniMaxAgent(WHITE, depth=depth)
-#   candidate = w_ag.find_move(NODES[name])
-#   # print(NODES[name])
-#   # print(f"for above board, candidate was: {human_move(candidate)}")
-#   assert (human_move(candidate) in best_moves)
