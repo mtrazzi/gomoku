@@ -6,8 +6,8 @@ import pytest
 from gomoku.board import Board
 from gomoku.bot import MiniMaxAgent
 from gomoku.game_handler import GameHandler
-from gomoku.heuristics import (score, score_for_color, simple_heuristic,
-                               possible_five)
+from gomoku.heuristics import (possible_five, score, score_for_color,
+                               simple_heuristic)
 from gomoku.utils import human_move, move
 
 
@@ -47,6 +47,14 @@ def print_debug_eval(arr):
   print(big_arr)
 
 
+def score_board(board_name, color, my_turn):
+  return score_for_color(BOARDS[board_name], color, my_turn)[0]
+
+
+def score_heuristic(board_name, color, my_turn):
+  return simple_heuristic(BOARDS[board_name], color, my_turn)[0]
+
+
 def test_possible_five():
   x_0, y_0 = move(10, 8)
   assert possible_five(BOARDS["ok_three"], x_0, y_0, 0, 1, 3, BLACK)
@@ -68,62 +76,62 @@ def test_score(consecutive, open_ends):
 
 
 def test_score_for_color():
-  assert score_for_color(BOARDS["one_stone"], WHITE, True) == 0
-  assert score_for_color(BOARDS["one_stone"], WHITE, False) == 0
-  assert (score_for_color(BOARDS["one_stone"], BLACK, True) >=
-          score_for_color(BOARDS["one_stone"], BLACK, False) > 0)
+  assert score_board("one_stone", WHITE, True) == 0
+  assert score_board("one_stone", WHITE, False) == 0
+  assert (score_board("one_stone", BLACK, True) >=
+          score_board("one_stone", BLACK, False) > 0)
 
-  assert (score_for_color(BOARDS["two_stones"], WHITE, True) >=
-          score_for_color(BOARDS["two_stones"], WHITE, False) > 0)
-  assert (score_for_color(BOARDS["two_stones"], BLACK, True) >=
-          score_for_color(BOARDS["two_stones"], BLACK, False) > 0)
-  assert (score_for_color(BOARDS["bad_two"], WHITE, True) >
-          score_for_color(BOARDS["ok_two"], WHITE, True) ==
-          score_for_color(BOARDS["good_two"], WHITE, True))
-  assert (score_for_color(BOARDS["bad_two"], BLACK, False) <
-          score_for_color(BOARDS["ok_two"], BLACK, False) <
-          score_for_color(BOARDS["good_two"], BLACK, False))
-  assert (score_for_color(BOARDS["bad_three"], WHITE, True) <
-          score_for_color(BOARDS["ok_three"], WHITE, True) ==
-          score_for_color(BOARDS["good_three"], WHITE, True))
-  assert (score_for_color(BOARDS["bad_three"], BLACK, False) <
-          score_for_color(BOARDS["ok_three"], BLACK, False) <
-          score_for_color(BOARDS["good_three"], BLACK, False))
-  assert (score_for_color(BOARDS["good_three"], BLACK, False) <
-          score_for_color(BOARDS["four"], BLACK, False) <
-          score_for_color(BOARDS["five"], BLACK, False))
-  assert (score_for_color(BOARDS["good_three"], WHITE, True) <
-          score_for_color(BOARDS["four"], WHITE, True) <
-          score_for_color(BOARDS["five"], WHITE, True))
+  assert (score_board("two_stones", WHITE, True) >=
+          score_board("two_stones", WHITE, False) > 0)
+  assert (score_board("two_stones", BLACK, True) >=
+          score_board("two_stones", BLACK, False) > 0)
+  assert (score_board("bad_two", WHITE, True) >
+          score_board("ok_two", WHITE, True) ==
+          score_board("good_two", WHITE, True))
+  assert (score_board("bad_two", BLACK, False) <
+          score_board("ok_two", BLACK, False) <
+          score_board("good_two", BLACK, False))
+  assert (score_board("bad_three", WHITE, True) <
+          score_board("ok_three", WHITE, True) ==
+          score_board("good_three", WHITE, True))
+  assert (score_board("bad_three", BLACK, False) <
+          score_board("ok_three", BLACK, False) <
+          score_board("good_three", BLACK, False))
+  assert (score_board("good_three", BLACK, False) <
+          score_board("four", BLACK, False) <
+          score_board("five", BLACK, False))
+  assert (score_board("good_three", WHITE, True) <
+          score_board("four", WHITE, True) <
+          score_board("five", WHITE, True))
 
 
 def test_simple_heuristic():
-  assert simple_heuristic(BOARDS["one_stone"], WHITE, True) < 0
-  assert simple_heuristic(BOARDS["one_stone"], WHITE, False) < 0
-  assert (simple_heuristic(BOARDS["one_stone"], BLACK, True) >=
-          simple_heuristic(BOARDS["one_stone"], BLACK, False) > 0)
-  assert (simple_heuristic(BOARDS["two_stones"], WHITE, True) ==
-          simple_heuristic(BOARDS["two_stones"], WHITE, False) ==
-          simple_heuristic(BOARDS["two_stones"], BLACK, True) ==
-          simple_heuristic(BOARDS["two_stones"], BLACK, False) == 0)
-  assert (simple_heuristic(BOARDS["bad_two"], WHITE, True) >
-          simple_heuristic(BOARDS["ok_two"], WHITE, True) >
-          simple_heuristic(BOARDS["good_two"], WHITE, True))
-  assert (simple_heuristic(BOARDS["bad_two"], BLACK, False) <
-          simple_heuristic(BOARDS["ok_two"], BLACK, False) <
-          simple_heuristic(BOARDS["good_two"], BLACK, False))
-  assert (simple_heuristic(BOARDS["good_three"], WHITE, True) <
-          simple_heuristic(BOARDS["bad_three"], WHITE, True) <
-          simple_heuristic(BOARDS["ok_three"], WHITE, True))
-  assert (simple_heuristic(BOARDS["good_three"], BLACK, False) >
-          simple_heuristic(BOARDS["bad_three"], BLACK, False) >
-          simple_heuristic(BOARDS["ok_three"], BLACK, False))
-  assert (simple_heuristic(BOARDS["good_three"], BLACK, False) <
-          simple_heuristic(BOARDS["four"], BLACK, False) <
-          simple_heuristic(BOARDS["five"], BLACK, False))
-  assert (simple_heuristic(BOARDS["good_three"], WHITE, True) >
-          simple_heuristic(BOARDS["four"], WHITE, True) >
-          simple_heuristic(BOARDS["five"], WHITE, True))
+  assert score_heuristic("one_stone", WHITE, True) < 0
+  assert score_heuristic("one_stone", WHITE, False) < 0
+  assert (score_heuristic("one_stone", BLACK, True) >=
+          score_heuristic("one_stone", BLACK, False) > 0)
+  assert (score_heuristic("two_stones", WHITE, True) ==
+          score_heuristic("two_stones", WHITE, False) ==
+          score_heuristic("two_stones", BLACK, True) ==
+          score_heuristic("two_stones", BLACK, False) == 0)
+  assert (score_heuristic("bad_two", WHITE, True) >
+          score_heuristic("ok_two", WHITE, True) >
+          score_heuristic("good_two", WHITE, True))
+  assert (score_heuristic("bad_two", BLACK, False) <
+          score_heuristic("ok_two", BLACK, False) <
+          score_heuristic("good_two", BLACK, False))
+  assert (score_heuristic("good_three", WHITE, True) <
+          score_heuristic("bad_three", WHITE, True) <
+          score_heuristic("ok_three", WHITE, True))
+  assert (score_heuristic("good_three", BLACK, False) >
+          score_heuristic("bad_three", BLACK, False) >
+          score_heuristic("ok_three", BLACK, False))
+  assert (score_heuristic("good_three", BLACK, False) <
+          score_heuristic("four", BLACK, False) <
+          score_heuristic("five", BLACK, False))
+  assert (score_heuristic("good_three", WHITE, True) >
+          score_heuristic("four", WHITE, True) >
+          score_heuristic("five", WHITE, True))
 
 
 def test_minimax_depth_0():

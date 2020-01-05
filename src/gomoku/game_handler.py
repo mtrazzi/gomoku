@@ -4,8 +4,9 @@ import time
 from gomoku.agent import Agent
 from gomoku.agents import MiniMaxAgent
 from gomoku.rules import Rules
-from gomoku.utils import (is_there_stones_around, nearby_stones,
-                          update_child_after_move, update_color_scores)
+from gomoku.utils import (get_player_name, is_there_stones_around,
+                          nearby_stones, update_child_after_move,
+                          update_color_scores)
 
 
 class GameHandler(object):
@@ -59,6 +60,7 @@ class GameHandler(object):
     self.helpAgent = MiniMaxAgent()
     self.begin = -1
     self.child_list = []
+    self.total_moves_played = 0
 
   def restart(self):
     """Reset all attributes to their initial states"""
@@ -171,6 +173,7 @@ class GameHandler(object):
     return True
 
   def do_move(self, move, player):
+    self.total_moves_played += 1
     self.state_history.append([player.last_move,
                                player.captures,
                                player.aligned_five_prev])
@@ -195,6 +198,7 @@ class GameHandler(object):
     return True
 
   def undo_move(self):
+    self.total_moves_played -= 1
     x, y = self.move_history.pop()
     previous_dead = self.capture_history.pop()
     last_move, captures, aligned_five_prev = self.state_history.pop()
@@ -263,7 +267,9 @@ class GameHandler(object):
     representation += f"X: {self.players[0].captures} stone captured\n"
     representation += f"O: {self.players[1].captures} stone captured\n"
     if self.begin > 0:
-      representation += f"Last move took {time.time() - self.begin}s\n"
+      player_name = get_player_name(player)
+      representation += (f"Last move by player {player_name} took" +
+                         f"{time.time() - self.begin}s\n")
     if len(self.error) != 0 and isinstance(player, Agent):
       representation += f"{self.error}"
     self.error = ""

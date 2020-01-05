@@ -3,6 +3,7 @@ import numpy as np
 from gomoku.utils import (SLOPES, all_equal, coordinates, opposite,
                           were_impacted_slope)
 
+MAX_CAPTURES = 10
 SCORE = {
   'XXXXX': 1e15,
   'OXXXX.': 1e14,
@@ -23,6 +24,7 @@ SCORE = {
   'XOO.': -1e8,
   'multiple_threats': 1e8,
   'stone_captured': 1e11,
+  'past_heuristic': 1e-10,
 }
 
 
@@ -138,7 +140,7 @@ def threat_score(x, y, dx, dy, position, color, my_turn):
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
 
-def score_for_color(position, color, my_turn, stones, past_scores):
+def score_for_color(position, color, my_turn, stones=[], past_scores=None):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
 
@@ -162,11 +164,11 @@ def score_for_color(position, color, my_turn, stones, past_scores):
   for x in range(len(position)):
     for y in range(len(position)):
       dtot = 0
-      if not position[x][y]:
+      if past_scores is not None and not position[x][y]:
         tot += past_scores[x][y]
         continue
       for (dx, dy) in SLOPES:
-        if not were_impacted_slope(stones, x, y, dx, dy):
+        if stones and not were_impacted_slope(stones, x, y, dx, dy):
           continue
         nb_cons = nb_consecutives(x, y, dx, dy, position, color)
         dtot += threat_score(x, y, dx, dy, position, color, my_turn)
@@ -176,11 +178,12 @@ def score_for_color(position, color, my_turn, stones, past_scores):
           dtot += score(nb_cons, op_ends, my_turn) * (can_five + 1)
           winning_groups += winning_stones(nb_cons, op_ends)
       tot += dtot
-      past_scores[x][y] = dtot
+      if past_scores is not None:
+        past_scores[x][y] = dtot
   return tot + advantage_combinations(winning_groups), past_scores
 
 
-def simple_heuristic(position, color, my_turn, stones, past_scores):
+def simple_heuristic(position, color, my_turn, stones=[], past_scores=None):
   """Evaluation function used for estimating the value of a node in minimax.
 
   Parameters
@@ -199,11 +202,12 @@ def simple_heuristic(position, color, my_turn, stones, past_scores):
   score: int
     How the situation looks like taking into account the two players.
   """
+  past_score_1, past_score_2 = past_scores if past_scores else (None, None)
   first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
-                                                   stones, past_scores[0])
+                                                   stones, past_score_1)
   second_score, new_past_scores_2 = score_for_color(position, opposite(color),
                                                     not my_turn, stones,
-                                                    past_scores[1])
+                                                    past_score_2)
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 
@@ -224,7 +228,7 @@ def capture_heuristic(player, opponent, our_stones):
   score: int
     How the situation looks like taking into account the two players's captures.
   """
-  if player.captures == 10:
+  if player.captures == MAX_CAPTURES:
     return np.inf
   sign = 1 if our_stones else -1
   diff = player.captures - opponent.captures
@@ -236,7 +240,8 @@ def past_heuristic(last_move, current_move):
   # heuristic only valid if last move exists
   if last_move == (-1, -1):
     return 0
-  return np.linalg.norm(np.array(last_move)-np.array(current_move))
+  return (-np.linalg.norm(np.array(last_move)-np.array(current_move)) *
+          SCORE['past_heuristic'])
 
 
 def possible_five(position, x, y, dx, dy, nb_consec, stones_color):

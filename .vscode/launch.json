@@ -8,7 +8,7 @@
       "name": "Python: Module",
       "type": "python",
       "request": "launch",
-      "module": "gomoku.gomoku",
+      "module": "gomoku.parser",
       "args": [
         "-p1",
         "human",

@@ -45,28 +45,36 @@ class Board(object):
     return representation
 
   def restart(self):
-    """Reset board to it's initial state"""
+    """Reset board to it's initial state."""
     self.board = np.zeros((self.size, self.size))
     if self.filename:
       self.parse(self.filename)
 
   def is_empty(self, x, y):
-    """Return if the intersection (x, y) is empty"""
+    """Return if the intersection (x, y) is empty."""
     return self.board[x][y] == 0
 
   def is_stone(self, x, y, color):
-    """Return if the stone at intersection (x, y) belongs to player"""
+    """Return if the stone at intersection (x, y) belongs to player."""
     return self.board[x][y] == color
 
   def place(self, x, y, color):
-    """Place the player stone at intersection (x, y)"""
+    """Place the player stone at intersection (x, y)."""
     self.board[x][y] = color
     return self
 
   def remove(self, x, y):
-    """Remove stone at intersection (x, y)"""
+    """Remove stone at intersection (x, y)."""
     self.board[x][y] = 0
     return self
+
+  def empty_board(self):
+    """Returns true if the board is empty."""
+    return np.sum(self.board) == 0
+
+  def center(self):
+    """Returns the coordinates of the center of the board."""
+    return self.size // 2, self.size // 2
 
   def parse(self, file):
     try:

@@ -159,3 +159,14 @@ def update_color_scores(game_handler, player, opponent, move):
   opponent.evaluation(game_handler.board.board, opponent.color, True, player,
                       opponent, game_handler.retrieve_captured_stones())
   opponent.color_scores = opponent.color_scores_dict[move]
+
+
+def get_player_name(player):
+  from gomoku.bot import MiniMaxAgent
+  from gomoku.agent import Agent
+  if isinstance(player, MiniMaxAgent):
+    return player.algorithm_name
+  elif isinstance(player, Agent):
+    return "not the best minimax agent"
+  else:
+    return "human"

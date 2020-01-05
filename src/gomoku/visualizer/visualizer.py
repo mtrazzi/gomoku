@@ -79,6 +79,7 @@ class Visualizer(object):
     if self.over:
       self.root.after(1, self.start)
       return
+    self.gameHandler.begin = time.time()
     current = self.gameHandler.current
     player = self.gameHandler.players[current]
     is_script = self.gameHandler.script and self.gameHandler.script.running()
