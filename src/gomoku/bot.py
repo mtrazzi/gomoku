@@ -9,6 +9,8 @@ from gomoku.heuristics import (capture_heuristic, past_heuristic,
 from gomoku.utils import human_move, is_there_stones_around, opposite
 from gomoku.rules import Rules
 
+from termcolor import colored
+
 import builtins
 
 try:
@@ -67,6 +69,7 @@ class MiniMaxAgent(Agent):
     self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.color_scores_dict = {}
     self.last_captures = []
+    self.count = {'retrievals': 0, 'not retrievals': 0, 'exit': 0}
 
   def reset(self):
     self.table = {}
@@ -115,7 +118,8 @@ class MiniMaxAgent(Agent):
     # print(self.color_scores[0])
     # print(self.color_scores[1])
     # print("\n\n\n\n####################################\n\n\n\n")
-    # print(f"total time: {time.time() - start}s")
+    print(colored(self.count ,'yellow'))
+    print(f"total time: {time.time() - start}s")
     return move_to_play
 
   def iterative_deepening(self, game_handler, coord, initial_value=0):
@@ -124,7 +128,7 @@ class MiniMaxAgent(Agent):
     for depth in range(1, self.depth):
       # print(f"\n\n[ITERATIVE DEEPENING STEP] move is {coord}, value is: {value}, depth is: {depth}")
       # print(f"at this point child list is: {game_handler.child_list}")
-      if time.time() - start >= (self.time_limit / 10):
+      if time.time() - start >= (self.time_limit / 100):
         # print(f"[EXIT OF ITERATIVE DEEPENING] skipping at depth = {depth}\n\n")
         return value
       value = self.mtdf(game_handler, coord, depth, None, value)
@@ -312,22 +316,27 @@ class MiniMaxAgent(Agent):
     # only retrieve nodes if they were explored with higher depth
     # if n:
     #   print(f"for node_id = {node_id}, n.lowerbound={n.lowerbound} < {n.upperbound}=n.upperbound")
+    # print(f"move = {move}")
     if n and depth <= n.depth: #and (depth - n.depth) % 2 == 0 and depth <= n.depth:
-      # print("retrieving")
+      # print(f"retrieving node_id {node_id}")
+      self.count['retrievals'] += 1
       # print(f"depth={depth} and n.depth={n.depth}")
       if n.lowerbound >= beta:
         node.undo_move()
-        # print(f"exiting because >= beta={beta}")
+        # print(colored(f"and exiting because >= beta={beta}", 'green'))
+        self.count['exit'] += 1
         return n.lowerbound
       if n.upperbound <= alpha:
         node.undo_move()
-        # print(f"exiting because <= alpha={alpha}")
+        # print(colored(f"and exiting because <= alpha={alpha}", 'green'))
+        self.count['exit'] += 1
         return n.upperbound
-      # print("not exiting")
+      # print(colored("no-exit retrieval", 'red'))
       alpha = max(alpha, n.lowerbound)
       beta = min(beta, n.upperbound)
-    # else:
-      # print("not retrieving")
+    else:
+      self.count['not retrievals'] += 1
+      # print(colored("not retrieving", 'blue'))
     if depth == 0:
       # after putting my stone, let's see what's the situation when not my turn
       # print(f"evaluation for move = {move}")
@@ -339,13 +348,14 @@ class MiniMaxAgent(Agent):
       lim = [alpha, beta]
       # for new_move in node.child(player):
       # print(f"testing move = {move}, child list: {node.child_list}")
-      # print(f"\nestimating move {move} at depth = {depth}")
       for new_move in node.child_list:#self.child(node):
+        # print(f"for loop: child={new_move}")
         val = sign * min(sign * val,
                          sign * self.ab_memory(node, new_move, depth - 1,
                                              1 - max_player, None, lim[0],
                                              lim[1]))
         if sign * (lim[1 - max_player] - val) >= 0:
+          # print("breaking")
           break
         lim[max_player] = sign * min(sign * lim[max_player], sign * val)
     node.undo_move()
@@ -353,6 +363,7 @@ class MiniMaxAgent(Agent):
 
     new_n = type('obj', (object,), {'lowerbound': -np.inf, 'upperbound': np.inf, 'depth': depth})()
     if n is None or new_n.depth > n.depth:
+      # print(f"when storing {move}, node_id is {node_id}, alpha={alpha} val={val} beta={beta}")
       if val <= alpha:
         new_n.upperbound = val
       if val > alpha and val < beta:
@@ -376,12 +387,16 @@ class MiniMaxAgent(Agent):
     """cf. https://en.wikipedia.org/wiki/MTD-f"""
     g, lower_bound, upper_bound = f, -np.inf, np.inf
     counter = 0
+    # print(f"[ENTERING MTDF LOOP FOR MOVE {move} (depth = {depth})]")
     while lower_bound < upper_bound:
       beta = (g + 1) if g == lower_bound else g
       counter += 1
+      # print("[CALLING AB_MEMORY]")
       # print(f"counter = {counter} g={g:2E}, beta={beta}, lower_bound={lower_bound} < {upper_bound}=upper_bound")
       # g = self.fail_hard(self.ab_memory(node, move, depth, True, tree, beta - 1, beta), beta - 1, beta)
       g = self.ab_memory(node, move, depth, True, tree, beta - 1, beta)
+      # print(colored(self.count ,'yellow'))
+      # self.count = {'retrievals': 0, 'not retrievals': 0, 'exit': 0}
       if g < beta:
         upper_bound = g
       else:
