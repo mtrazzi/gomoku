@@ -41,7 +41,7 @@ class Rules(object):
       bounds = x + 3 * dx, y + 3 * dy
       if not (0 <= bounds[0] < size and 0 <= bounds[1] < size):
         continue
-      if not board.is_stone(*bounds, player.color):
+      if board.board[bounds[0]][bounds[1]] != player.color:
         continue
       stone1 = ((x + dx), (y + dy))
       stone2 = ((x + dx * 2), (y + dy * 2))

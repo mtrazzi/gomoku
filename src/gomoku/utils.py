@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
 
@@ -144,8 +145,7 @@ def nearby_stones(move, board):
 
 def update_child_after_move(game_handler, captures, last_move):
   game_handler.child_list = list(set(game_handler.child_list +
-                                     nearby_stones(last_move,
-                                                   game_handler.board)))
+                                 nearby_stones(last_move, game_handler.board)))
   if (last_move[0], last_move[1]) in game_handler.child_list:
     game_handler.child_list.remove((last_move[0], last_move[1]))
   for capture in captures:
@@ -153,12 +153,6 @@ def update_child_after_move(game_handler, captures, last_move):
       if (not is_there_stones_around(game_handler.board.board, *stone) and
           stone in game_handler.child_list):
         game_handler.child_list.remove(stone)
-
-
-def update_color_scores(game_handler, player, opponent, move):
-  opponent.evaluation(game_handler.board.board, opponent.color, True, player,
-                      opponent, game_handler.retrieve_captured_stones())
-  opponent.color_scores = opponent.color_scores_dict[move]
 
 
 def get_player_name(player):

@@ -11,7 +11,7 @@ SCORE = {
   '.XXXX.': 1e14,
   '.OOOO.': 1e13,
   '.XXX.': 1e10,
-  '.OOO.': 5e4,
+  '.OOO.': 5e2,
   'OXXX.': 1e2,
   'XOOOO.': 1e1,
   'XOOO.': 1e1,
@@ -137,7 +137,6 @@ def is_this_a_threat_1(x, y, dx, dy, position, color):
 def threat_score(x, y, dx, dy, position, color, my_turn):
   threat = is_this_a_threat(x, y, dx, dy, position, color)
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
-
 
 def score_for_color(position, color, my_turn, stones=[], past_scores=None):
   """Looking only at the stones of color `color`, and knowing that it's
