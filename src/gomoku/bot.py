@@ -5,17 +5,19 @@ import numpy as np
 
 from gomoku.agent import Agent
 from gomoku.heuristics import (SCORE, capture_heuristic, past_heuristic,
-                               simple_heuristic)
+                               heuristic)
 from gomoku.rules import Rules
-from gomoku.utils import is_there_stones_around, opposite
+from gomoku.utils import is_there_stones_around, opposite, best_values
 
 CHILD_HYPERPARAM = 10
+TIME_LIMIT = 0.5
+BREAKING_TIME = 0.4 * TIME_LIMIT
+SIMPLE_EVAL_MAX_TIME = 0.5 * TIME_LIMIT
 
 
 def minimax_agent_wrapper(algorithm_name):
-  def minimax_agent(color=1, depth=2, max_top_moves=5, simple_eval_depth=0):
-    return MiniMaxAgent(color, depth, max_top_moves, simple_eval_depth,
-                        algorithm_name)
+  def minimax_agent(color=1, depth=2, max_top_moves=5):
+    return MiniMaxAgent(color, depth, max_top_moves, algorithm_name)
   return minimax_agent
 
 
@@ -54,21 +56,18 @@ class MiniMaxAgent(Agent):
     The heuristic used to evaluate nodes.
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
-  simple_eval_depth: int
-    Depth used in simple evaluation for the first evaluation of moves.
   algorithm_name: string
     The name of the special minimax flavor.
   """
-  def __init__(self, color=1, depth=2, max_top_moves=5, simple_eval_depth=0,
-               algorithm_name='alpha_beta_memory'):
+  def __init__(self, color=1, depth=2, max_top_moves=5, algorithm_name='mtdf'):
     super().__init__(color)
     self.depth = depth
     self.max_top_moves = max_top_moves
     self.debug = False
-    self.simple_eval_depth = simple_eval_depth
     self.table = {}
     self.undo_table = {}
     self.time_limit = 0.5
+    self.breaking_time = [0.01, 0.1, 0.3]
     self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.color_scores_dict = {}
@@ -76,6 +75,7 @@ class MiniMaxAgent(Agent):
     self.algorithm_name = algorithm_name
     self.minimaximizer = self.get_algorithm(algorithm_name)
     self.gh = None
+    self.ite_deep_depth = 0
 
   def get_algorithm(self, algorithm_name):
     return getattr(self, algorithm_name)
@@ -110,6 +110,7 @@ class MiniMaxAgent(Agent):
     self.color_scores = self.color_scores_dict[opponent.last_move]
 
   def find_move(self, gh, max_depth=None):
+    self.start = time.time()
     # if first move, play in the center
     if gh.board.empty_board():
       return gh.board.center()
@@ -119,9 +120,7 @@ class MiniMaxAgent(Agent):
     # Retrieve last captures (used in heuristics)
     self.last_captures = gh.retrieve_captured_stones()
     # Estimate moves using a depth = 0 evaluation on each of them
-    start = time.time()
     score_map = self.simple_evaluation()
-    print(f"simple evaluation took {time.time() - start}")
     # Find the list of best moves using this score map
     candidates, raw_val = self.best_moves(score_map, self.max_top_moves)
     # remove double threes
@@ -129,29 +128,28 @@ class MiniMaxAgent(Agent):
                                 for (move, val) in zip(candidates, raw_val)
                                 if gh.can_place(*move, player)])
     # find best candidates with iterative deepening
-    self.begin, self.moves_left = time.time(), self.max_top_moves
-    values = [self.iterative_deepening(coord, raw_val[i])
-              for (i, coord) in enumerate(candidates)]
+    values = self.iterative_deepening(candidates, raw_val)
     # compute the best move
     move_to_play = candidates[np.argmax(values)]
     # save scores and transposition table
     self.update(move_to_play)
+    if time.time()-self.start > self.time_limit:
+      exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
     return move_to_play
 
-  def iterative_deepening(self, coord, initial_value=0):
-    self.moves_left -= 1
-    start, value = time.time(), initial_value
+  def iterative_deepening(self, moves, initial_values):
+    values = [list(initial_values)] + [[0] * len(moves) * (self.depth - 1)]
     for depth in range(1, self.depth):
-      remaining_time = self.time_limit - (time.time() - self.begin) - 0.2
-      if time.time() - start >= (remaining_time / (self.moves_left + 1)):
-        print(f"skipping with depth = {depth}")
-        return value
-      print(f"entering depth = {depth}")
-      if self.algorithm_name == 'mtdf':
-        value = self.minimaximizer(coord, depth, value)
-      else:
-        value = self.minimaximizer(coord, depth)
-    return value
+      self.ite_deep_depth = depth
+      for i in range(len(moves)):
+        if time.time() - self.start >= BREAKING_TIME:
+          return best_values(values, depth, i)
+        if self.algorithm_name == 'mtdf':
+          values[depth][i] = self.minimaximizer(moves[i], depth,
+                                                values[depth - 1][i])
+        else:
+          values[depth][i] = self.minimaximizer(moves[i], depth)
+    return best_values(values, depth, i)
 
   def simple_evaluation(self):
     """Returns a score map for possible moves using a depth = 1 evaluation.
@@ -170,14 +168,12 @@ class MiniMaxAgent(Agent):
     player, opponent = self.return_players(gh, True)
     score_map = np.full((size, size), -np.inf)
     player, _ = self.return_players(gh, True)
-    for x in range(size):
-      for y in range(size):
-        if (not is_there_stones_around(gh.board.board, x, y) or
-           (not gh.can_place(x, y, player))):
-          continue
-        gh.do_move((x, y), player)
-        score_map[x][y] = self.evaluation(self.color, False, player, opponent)
-        gh.undo_move()
+    for (x, y) in reversed(gh.child_list):
+      if time.time() - self.start >= SIMPLE_EVAL_MAX_TIME:
+        break
+      gh.do_move((x, y), player)
+      score_map[x][y] = self.evaluation(self.color, False, player, opponent)
+      gh.undo_move()
     return score_map
 
   def best_moves(self, score_map, max_top_moves=5):
@@ -210,7 +206,7 @@ class MiniMaxAgent(Agent):
     Parameters
     ----------
     color: int
-      The color for the first score in simple_heuristic.
+      The color for the first score in heuristic.
     player: Player
       The player that just placed a stone.
     opponent: Player
@@ -224,8 +220,9 @@ class MiniMaxAgent(Agent):
     captures = self.gh.retrieve_captured_stones()
     position = self.gh.board.board
     stones = [player.last_move, opponent.last_move] + captures
-    h_score, c_score = simple_heuristic(position, color, my_turn, stones,
-                                        copy.deepcopy(self.color_scores))
+    h_score, c_score = heuristic(position, color, my_turn, stones,
+                                 copy.deepcopy(self.color_scores),
+                                 self.ite_deep_depth)
     self.color_scores_dict[player.last_move] = c_score
     h_past = past_heuristic(opponent.last_move, player.last_move)
     return ((h_score + capture_heuristic(player, opponent,
@@ -408,6 +405,8 @@ class MiniMaxAgent(Agent):
     g, lower_bound, upper_bound = f, -np.inf, np.inf
     counter = 0
     while lower_bound < upper_bound:
+      if time.time() - self.start >= BREAKING_TIME:
+        return g
       beta = (g + 1) if g == lower_bound else g
       counter += 1
       g = self.alpha_beta_memory(move, depth, True, beta - 1, beta)

@@ -2,6 +2,8 @@ import numpy as np
 
 from gomoku.utils import SLOPES, opposite, were_impacted_slope
 
+import line_profiler
+
 MAX_CAPTURES = 10
 SCORE = {
   'XXXXX': 1e15,
@@ -179,8 +181,47 @@ def score_for_color(position, color, my_turn, stones=[], past_scores=None):
         past_scores[x][y] = dtot
   return tot + advantage_combinations(winning_groups), past_scores
 
+def basic_color_score(position, color, my_turn, stones=[], past_scores=None):
+  """Looking only at the stones of color `color`, and knowing that it's
+  `my_turn` (or not), decide how good is my `position`.
 
-def simple_heuristic(position, color, my_turn, stones=[], past_scores=None):
+  Parameters
+  ----------
+  position: numpy.ndarray
+    Position of the board
+  color: int
+    Color of the stones we're looking at
+  my_turn: bool
+    Is it my turn or not? Something to take into account when evaluating board.
+  stones: int list
+    List of stones (last moves, stones captured).
+
+  Return
+  ------
+  tot_score: int
+    How much total score do I get based on another function `score`.
+  """
+  tot = 0
+  for x in range(len(position)):
+    for y in range(len(position)):
+      dtot = 0
+      if past_scores is not None and not position[x][y]:
+        tot += past_scores[x][y]
+        continue
+      for (dx, dy) in SLOPES:
+        if stones and not were_impacted_slope(stones, x, y, dx, dy):
+          continue
+        nb_cons = nb_consecutives(x, y, dx, dy, position, color)
+        if nb_cons > 0:
+          op_ends = nb_open_ends(x, y, dx, dy, nb_cons, position)
+          dtot += score(nb_cons, op_ends, my_turn)
+      tot += dtot
+      if past_scores is not None:
+        past_scores[x][y] = dtot
+  return tot, past_scores
+
+
+def heuristic(position, color, my_turn, stones=[], past_scores=None, depth=0):
   """Evaluation function used for estimating the value of a node in minimax.
 
   Parameters
@@ -200,11 +241,18 @@ def simple_heuristic(position, color, my_turn, stones=[], past_scores=None):
     How the situation looks like taking into account the two players.
   """
   past_score_1, past_score_2 = past_scores if past_scores else (None, None)
-  first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
-                                                   stones, past_score_1)
-  second_score, new_past_scores_2 = score_for_color(position, opposite(color),
-                                                    not my_turn, stones,
-                                                    past_score_2)
+  if depth == 0:
+    first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
+                                                     stones, past_score_1)
+    second_score, new_past_scores_2 = score_for_color(position, opposite(color),
+                                                      not my_turn, stones,
+                                                      past_score_2)
+  else:
+    first_score, new_past_scores_1 = basic_color_score(position, color, my_turn,
+                                                       stones, past_score_1)
+    second_score, new_past_scores_2 = basic_color_score(position, opposite
+                                                        (color), not my_turn,
+                                                        stones, past_score_2)
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 

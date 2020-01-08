@@ -7,7 +7,6 @@ from gomoku.rules import Rules
 from gomoku.utils import (get_player_name, is_there_stones_around,
                           nearby_stones, update_child_after_move)
 
-import line_profiler
 
 class GameHandler(object):
   """Class GameHandler
@@ -61,7 +60,6 @@ class GameHandler(object):
     self.begin = -1
     self.child_list = []
     self.total_moves_played = 0
-    self.last_children_added = []
 
   def restart(self):
     """Reset all attributes to their initial states"""
