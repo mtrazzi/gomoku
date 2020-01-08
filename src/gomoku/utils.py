@@ -167,4 +167,4 @@ def get_player_name(player):
 
 
 def best_values(values, depth, i):
-  return values[depth - 1] if sum(values[depth]) == 0 else values[depth][:i]
+  return values[depth - 1] if i < 2 else values[depth][:i]

@@ -163,6 +163,9 @@ class Rules(object):
 
   @staticmethod
   def check_winner(board, players):
+    for player in players:
+      if Rules.aligned_win(board, player) and player.aligned_five_prev:
+        return player
     for (player, opponent) in [players, players[::-1]]:
       if player.captures >= 10:
         return player
