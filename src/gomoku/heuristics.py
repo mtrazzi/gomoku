@@ -2,8 +2,6 @@ import numpy as np
 
 from gomoku.utils import SLOPES, opposite, were_impacted_slope
 
-import line_profiler
-
 MAX_CAPTURES = 10
 SCORE = {
   'XXXXX': 1e15,
