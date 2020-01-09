@@ -76,6 +76,10 @@ class Board(object):
     """Returns the coordinates of the center of the board."""
     return self.size // 2, self.size // 2
 
+  def is_full(self):
+    """Returns True if the entire board is full."""
+    return not (0 in self.board)
+
   def parse(self, file):
     try:
       inv_cmap = {v: k for k, v in self.cmap.items()}

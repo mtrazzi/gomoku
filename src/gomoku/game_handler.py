@@ -60,7 +60,7 @@ class GameHandler(object):
     self.begin = -1
     self.child_list = []
     self.total_moves_played = 0
-    self.nb_visits = 0
+    self.visits = 0
     self.stats = 0
     self.value = 0
 
@@ -136,7 +136,6 @@ class GameHandler(object):
     self.turn += 1
 
     self.winner = Rules.check_winner(self.board, self.players)
-    self.current = (self.current + 1) % 2
 
     print(self)
     return True
@@ -175,6 +174,7 @@ class GameHandler(object):
     return True
 
   def do_move(self, move, player):
+    player = self.players[self.current]
     self.total_moves_played += 1
     self.state_history.append([player.last_move,
                                player.captures,
@@ -192,6 +192,7 @@ class GameHandler(object):
 
     # updating child list
     update_child_after_move(self, captures, move)
+    self.current = 1 - self.current
     return True
 
   def undo_move(self):
@@ -224,6 +225,7 @@ class GameHandler(object):
     player.aligned_five_prev = aligned_five_prev
     if hasattr(player, 'undo_table'):
       player.table = player.undo_table
+    self.current = 1 - self.current
     return self
 
   def child(self, player):

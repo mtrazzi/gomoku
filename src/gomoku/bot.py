@@ -105,7 +105,7 @@ class MiniMaxAgent(Agent):
       self.color_scores = self.color_scores_dict[move_to_play]
 
   def update_because_opponent_played(self):
-    player, opponent = self.return_players(self.gh, True)
+    player, opponent = self.return_players()
     self.evaluation(self.color, True, opponent, player)
     self.color_scores = self.color_scores_dict[opponent.last_move]
 
@@ -114,7 +114,8 @@ class MiniMaxAgent(Agent):
     # if first move, play in the center
     if gh.board.empty_board():
       return gh.board.center()
-    self.gh, (player, _) = gh, self.return_players(gh, True)
+    self.gh = gh
+    (player, _) = self.return_players()
     # need to update color scores accordingly to opponent's last move
     self.update_because_opponent_played()
     # Retrieve last captures (used in heuristics)
@@ -165,9 +166,8 @@ class MiniMaxAgent(Agent):
       For each coordinate, its depth = 1 evaluation.
     """
     gh, size = self.gh, self.gh.size
-    player, opponent = self.return_players(gh, True)
+    player, opponent = self.return_players()
     score_map = np.full((size, size), -np.inf)
-    player, _ = self.return_players(gh, True)
     for (x, y) in reversed(gh.child_list):
       if time.time() - self.start >= SIMPLE_EVAL_MAX_TIME:
         break
@@ -228,10 +228,11 @@ class MiniMaxAgent(Agent):
     return ((h_score + capture_heuristic(player, opponent,
                                          player.color == self.color) + h_past))
 
-  def return_players(self, node, max_player):
+  def return_players(self, max_player=True):
     # current player depends on if we're maximizing
     move_color = self.color if max_player else opposite(self.color)
-    return node.players[move_color - 1], node.players[opposite(move_color) - 1]
+    players = self.gh.players
+    return players[move_color - 1], players[opposite(move_color) - 1]
 
   def minimax(self, move, depth, max_player=True):
     """The minimax function returns a heuristic value for leaf nodes (terminal
@@ -252,7 +253,7 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    player, opponent = self.return_players(self.gh, max_player)
+    player, opponent = self.return_players(max_player)
     self.gh.do_move(move, player)
 
     # hardcoding forcing moves here to stop three exploring
@@ -297,7 +298,7 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    player, opponent = self.return_players(self.gh, max_player)
+    player, opponent = self.return_players(max_player)
     self.gh.do_move(move, player)
 
     # hardcoding forcing moves here to stop three exploring
@@ -347,7 +348,7 @@ class MiniMaxAgent(Agent):
     value: int
       The estimated value of the current node (position) being evaluated.
     """
-    player, opponent = self.return_players(self.gh, max_player)
+    player, opponent = self.return_players(max_player)
     self.gh.do_move(move, player)
 
     # hardcoding forcing moves here to stop three exploring
@@ -424,11 +425,14 @@ class MCTSAgent(MiniMaxAgent):
   def __init__(self, color=1):
     super().__init__(color)
     self.algorithm_name = "mcts"
-    self.start = time.time()
+    self.d_visit = {}
 
   def find_move(self, gh):
-    self.gh = gh
-    return self.mcts()
+    self.gh, self.start = gh, time.time()
+    move = self.mcts()
+    if time.time()-self.start > self.time_limit:
+      exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
+    return move
 
   def pick_random(self):
     while True:
@@ -458,9 +462,18 @@ class MCTSAgent(MiniMaxAgent):
     else:
       return -1
 
+  def get_attr(self, move, attr):
+    """Access certain attribute of a child."""
+    player, _ = self.return_players()
+    self.gh.do_move(player)
+    result = getattr(self.gh, attr)
+    self.gh.undo_move()
+    return result
+
   def best_child(self):
-    idx = np.argmax([child.nb_visits for child in self.gh.child_list])
-    return self.gh.child_list[idx]
+    def get_nb_visit(move): self.get_attr(move, 'visits')
+    nb_visits = map(get_nb_visit, self.gh.child_list)
+    return self.gh.child_list[np.argmax(nb_visits)]
 
   def is_root(self):
     return True
@@ -491,22 +504,27 @@ class MCTSAgent(MiniMaxAgent):
     """Returns a child move using UCB exploration/exploitation tradeoff."""
     weights = []
     for move in self.gh.child_list:
-      self.gh.do_move(move)
+      nb_visits = self.d_visit[move] if move in self.d_visit.keys() else 1
       w = (self.gh.value +
-           UCB_CONSTANT * np.sqrt(np.log(self.gh.visits) / self.gh.visits))
+           UCB_CONSTANT * np.sqrt(np.log(nb_visits) / nb_visits))
       weights.append(w)
-      self.gh.undo_move(move)
-    distribution = [w / sum(weights) for w in weights]
-    return np.random.choice(self.gh.child_list, p=distribution)
+    distribution = np.array([w / sum(weights) if w > 0 else 1e-15 for w in weights])
+    distribution = (1 / np.sum(distribution)) * distribution
+    idx = np.random.choice(len(self.gh.child_list), p=distribution)
+    return self.gh.child_list[idx]
 
   def traverse(self):
-    while self.fully_expanded():
+    max_player = True
+    while not self.fully_expanded():
       move = self.ucb_sample()
-      self.gh.do_move(move)
+      player, _ = self.return_players(max_player)
+      self.gh.do_move(move, player)
+      max_player = not max_player
     self.pick_unvisited()  # different from gfg code
 
   def mcts(self):
     while self.resources_left():
+      print("hello")
       self.traverse()
       result = self.rollout()
       self.backpropagate(result)
