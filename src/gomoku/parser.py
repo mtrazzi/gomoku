@@ -4,7 +4,7 @@ import argparse
 
 from gomoku.agents import NegaMaxAgent, PVSAgent
 from gomoku.board import Board
-from gomoku.bot import minimax_agent_wrapper
+from gomoku.bot import MCTSAgent, minimax_agent_wrapper
 from gomoku.game_handler import GameHandler
 from gomoku.player import Player
 from gomoku.script import Script
@@ -18,6 +18,7 @@ AGENTS = {
   "alpha_beta": minimax_agent_wrapper("alpha_beta"),
   "alpha_beta_memory": minimax_agent_wrapper("alpha_beta_memory"),
   "mtdf": minimax_agent_wrapper("mtdf"),
+  "mcts": MCTSAgent,
 }
 CHOICES = AGENTS.keys()
 

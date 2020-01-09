@@ -60,6 +60,9 @@ class GameHandler(object):
     self.begin = -1
     self.child_list = []
     self.total_moves_played = 0
+    self.nb_visits = 0
+    self.stats = 0
+    self.value = 0
 
   def restart(self):
     """Reset all attributes to their initial states"""

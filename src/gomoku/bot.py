@@ -4,16 +4,16 @@ import time
 import numpy as np
 
 from gomoku.agent import Agent
-from gomoku.heuristics import (SCORE, capture_heuristic, past_heuristic,
-                               heuristic)
+from gomoku.heuristics import (SCORE, capture_heuristic, heuristic,
+                               past_heuristic)
 from gomoku.rules import Rules
-from gomoku.utils import is_there_stones_around, opposite, best_values
+from gomoku.utils import best_values, is_there_stones_around, opposite
 
 CHILD_HYPERPARAM = 10
 TIME_LIMIT = 0.5
 BREAKING_TIME = 0.4 * TIME_LIMIT
 SIMPLE_EVAL_MAX_TIME = 0.5 * TIME_LIMIT
-
+UCB_CONSTANT = 0
 
 def minimax_agent_wrapper(algorithm_name):
   def minimax_agent(color=1, depth=2, max_top_moves=5):
@@ -109,7 +109,7 @@ class MiniMaxAgent(Agent):
     self.evaluation(self.color, True, opponent, player)
     self.color_scores = self.color_scores_dict[opponent.last_move]
 
-  def find_move(self, gh, max_depth=None):
+  def find_move(self, gh):
     self.start = time.time()
     # if first move, play in the center
     if gh.board.empty_board():
@@ -415,3 +415,99 @@ class MiniMaxAgent(Agent):
       else:
         lower_bound = g
     return g
+
+
+class MCTSAgent(MiniMaxAgent):
+  """Agent using Monte Carlo Tree Search. Inspired from:
+  - geeksforgeeks.org/ml-monte-carlo-tree-search-mcts
+  - cs.swarthmore.edu/~bryce/cs63/s16/slides/2-15_MCTS.pdf"""
+  def __init__(self, color=1):
+    super().__init__(color)
+    self.algorithm_name = "mcts"
+    self.start = time.time()
+
+  def find_move(self, gh):
+    self.gh = gh
+    return self.mcts()
+
+  def pick_random(self):
+    while True:
+      nb_child = len(self.gh.child_list)
+      rand_idx = np.random.randint(0, nb_child)
+      rand_move = self.gh.child_list[rand_idx]
+      if self.gh.can_place(rand_move):
+        return rand_move
+
+  def rollout_policy(self):
+    self.gh.do_move(self.pick_random())
+
+  def is_terminal(self):
+    return Rules.check_winner(self.gh.board, self.gh.players) is not None
+
+  def rollout(self):
+    while not self.is_terminal():
+      self.rollout_policy()
+    return self.result()
+
+  def result(self):
+    player = Rules.check_winner(self.gh.board, self.gh.players)
+    if player is None:
+      return 0
+    elif player.color == self.color:
+      return 1
+    else:
+      return -1
+
+  def best_child(self):
+    idx = np.argmax([child.nb_visits for child in self.gh.child_list])
+    return self.gh.child_list[idx]
+
+  def is_root(self):
+    return True
+
+  def update_stats(self, result):
+    return 0
+
+  def backpropagate(self, result):
+    if self.is_root():
+      return
+    self.gh.stats = self.update_stats(result)
+    self.gh.undo_move()
+    self.backpropagate(result)
+
+  def resources_left(self):
+    return (time.time() - self.start) < self.time_limit
+
+  def best_ucb(self):
+    return self.gh
+
+  def fully_expanded(self):
+    return True
+
+  def pick_unvisited(self):
+    return self.gh.child_list[0]
+
+  def ucb_sample(self):
+    """Returns a child move using UCB exploration/exploitation tradeoff."""
+    weights = []
+    for move in self.gh.child_list:
+      self.gh.do_move(move)
+      w = (self.gh.value +
+           UCB_CONSTANT * np.sqrt(np.log(self.gh.visits) / self.gh.visits))
+      weights.append(w)
+      self.gh.undo_move(move)
+    distribution = [w / sum(weights) for w in weights]
+    return np.random.choice(self.gh.child_list, p=distribution)
+
+  def traverse(self):
+    while self.fully_expanded():
+      move = self.ucb_sample()
+      self.gh.do_move(move)
+    self.pick_unvisited()  # different from gfg code
+
+  def mcts(self):
+    while self.resources_left():
+      self.traverse()
+      result = self.rollout()
+      self.backpropagate(result)
+    return self.best_child()

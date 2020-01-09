@@ -138,6 +138,7 @@ def threat_score(x, y, dx, dy, position, color, my_turn):
   threat = is_this_a_threat(x, y, dx, dy, position, color)
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
+
 def score_for_color(position, color, my_turn, stones=[], past_scores=None):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
@@ -178,6 +179,7 @@ def score_for_color(position, color, my_turn, stones=[], past_scores=None):
       if past_scores is not None:
         past_scores[x][y] = dtot
   return tot + advantage_combinations(winning_groups), past_scores
+
 
 def basic_color_score(position, color, my_turn, stones=[], past_scores=None):
   """Looking only at the stones of color `color`, and knowing that it's
