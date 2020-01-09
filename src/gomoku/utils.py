@@ -153,11 +153,17 @@ def update_child_after_move(game_handler, captures, last_move):
       if (not is_there_stones_around(game_handler.board.board, *stone) and
           stone in game_handler.child_list):
         game_handler.child_list.remove(stone)
+  for capture in captures:
+    if capture not in game_handler.child_list:
+      game_handler.child_list.append(capture)
 
 
 def get_player_name(player):
-  from gomoku.bot import MiniMaxAgent
+  from gomoku.mcts import MCTSAgent
+  from gomoku.minimax import MiniMaxAgent
   from gomoku.agent import Agent
+  if isinstance(player, MCTSAgent):
+    return "mcts"
   if isinstance(player, MiniMaxAgent):
     return player.algorithm_name
   elif isinstance(player, Agent):

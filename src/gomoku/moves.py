@@ -47,7 +47,7 @@ def generate_moves(player, depth, maximizing):
         continue
       coords = adjacent + [x, y]
       for v, w in coords:
-        if board.is_empty(v, w) and gameHandler.can_place(v, w, current):
+        if board.is_empty(v, w) and gameHandler.can_place(v, w):
           board.place(v, w, current.color)
           scores.append(move_heuristic(board, v, w, player, player.opponent))
           board.remove(v, w)

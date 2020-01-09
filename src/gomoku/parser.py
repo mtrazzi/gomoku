@@ -4,8 +4,9 @@ import argparse
 
 from gomoku.agents import NegaMaxAgent, PVSAgent
 from gomoku.board import Board
-from gomoku.bot import MCTSAgent, minimax_agent_wrapper
 from gomoku.game_handler import GameHandler
+from gomoku.mcts import MCTSAgent
+from gomoku.minimax import minimax_agent_wrapper
 from gomoku.player import Player
 from gomoku.script import Script
 from gomoku.visualizer import Visualizer
@@ -31,7 +32,8 @@ if __name__ == '__main__':
                       help="Enable terminal mode.")
   parser.add_argument('-H', "--heuristic", type=str, default='?',
                       help="Heuristic function.")
-  parser.add_argument('-D', '--depth', type=int, default=2, help="Depth of the search tree for Minimax Agents")
+  parser.add_argument('-D', '--depth', type=int, default=2, help="Depth of the \
+                        search tree for Minimax Agents")
   parser.add_argument('-p1', "--player1",
                       type=str, default="human",
                       choices=CHOICES,

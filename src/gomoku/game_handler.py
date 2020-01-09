@@ -129,9 +129,9 @@ class GameHandler(object):
     """
     player = self.players[self.current]
 
-    if not self.can_place(*move, player):
+    if not self.can_place(*move):
       return False
-    self.do_move(move, player)
+    self.do_move(move)
 
     self.turn += 1
 
@@ -144,7 +144,7 @@ class GameHandler(object):
     """Return the best predicted move for the player"""
     return self.helpAgent.find_move(self)
 
-  def can_place(self, x, y, player):
+  def can_place(self, x, y):
     """See if player can place stone at emplacement (x, y)
 
     Parameters
@@ -159,6 +159,7 @@ class GameHandler(object):
     succeed: bool
       True if we can place the stone else False
     """
+    player = self.players[self.current]
     if (x < 0 or x >= self.board.size or y < 0 or y >= self.board.size or not
         self.board.is_empty(x, y)):
       self.error = f"\033[1;31mIntersection must be empty (\'.\' or *)\033[0m"
@@ -173,7 +174,7 @@ class GameHandler(object):
     self.board.remove(x, y)
     return True
 
-  def do_move(self, move, player):
+  def do_move(self, move):
     player = self.players[self.current]
     self.total_moves_played += 1
     self.state_history.append([player.last_move,
