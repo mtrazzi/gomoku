@@ -20,7 +20,7 @@ class Script(object):
   def get_move(self):
     """Return next move in script"""
     move = self.move.pop(0)
-    return move
+    return tuple(move)
 
   def running(self):
     """Return if they are still move to be done"""

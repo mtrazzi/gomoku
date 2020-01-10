@@ -118,7 +118,7 @@ class MCTSAgent(MiniMaxAgent):
     node_id = self.get_id()
     return str(node_id) + str(move)
 
-  def is_visited(self, move_id):
+  def is_visited(self, move):
     move_id = self.get_action_value_id(move)
     return move_id in self.d_visit.keys()
 

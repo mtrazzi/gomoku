@@ -41,7 +41,7 @@ def test_double_threes(problem):
   print(f"before move: {move}")
   print(game_handler.board)
   move = [move[0] - 1, move[1] - 1]
-  game_handler.do_move(move, player)
+  game_handler.do_move(move)
   print("after")
   print(game_handler.board)
   assert Rules.no_double_threes(game_handler.board, player) == label

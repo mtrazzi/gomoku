@@ -4,10 +4,9 @@ import numpy as np
 import pytest
 
 from gomoku.board import Board
-from gomoku.bot import MiniMaxAgent
+from gomoku.minimax import MiniMaxAgent
 from gomoku.game_handler import GameHandler
-from gomoku.heuristics import (possible_five, score, score_for_color,
-                               simple_heuristic)
+from gomoku.heuristics import (score, score_for_color, heuristic)
 from gomoku.utils import human_move, move
 
 
@@ -52,13 +51,7 @@ def score_board(board_name, color, my_turn):
 
 
 def score_heuristic(board_name, color, my_turn):
-  return simple_heuristic(BOARDS[board_name], color, my_turn)[0]
-
-
-def test_possible_five():
-  x_0, y_0 = move(10, 8)
-  assert possible_five(BOARDS["ok_three"], x_0, y_0, 0, 1, 3, BLACK)
-  assert not possible_five(BOARDS["cannot_do_five"], x_0, y_0, 0, 1, 3, BLACK)
+  return heuristic(BOARDS[board_name], color, my_turn)[0]
 
 
 @pytest.mark.parametrize("consecutive", CONSECUTIVE)
