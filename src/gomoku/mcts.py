@@ -1,12 +1,12 @@
 import copy
 import time
 
+from anytree import Node, RenderTree
 import numpy as np
 
 from gomoku.minimax import MiniMaxAgent
 from gomoku.rules import Rules
-
-from anytree import Node, RenderTree
+from gomoku.tree import Tree
 
 TIME_LIMIT = 0.5
 BREAKING_TIME = 0.1 * TIME_LIMIT
@@ -159,10 +159,6 @@ class MCTSAgent(MiniMaxAgent):
     self.d_visit[move_id] = ((self.d_visit[move_id] + 1) if move_id in
                              self.d_visit.keys() else 1)
 
-  def add_child(self, move, parent):
-    
-    return Node(str(move), parent=parent, val=0)
-
   def traverse(self, max_depth=1):
     parent_visits = 1
     depth = 0
@@ -173,18 +169,18 @@ class MCTSAgent(MiniMaxAgent):
       self.gh.do_move(move)
       depth += 1
       parent = self.tree if child is None else child
-      child = self.add_child(move, parent)
+      child = parent.add_child(move)
       if depth >= max_depth:
         return
     self.pick_unvisited()  # different from gfg code
 
   def print_tree(self):
     for pre, _, node in RenderTree(self.tree):
-      print("%s%s (val = %2d)" % (pre, node.name, node.val))
+      print("%s%s (n_visits = %2d)" % (pre, node.name, node.n_visits))
 
   def mcts(self):
     self.root = self.get_id()
-    self.tree = Node("Root", val=0)
+    self.tree = Tree("Root", n_visits=1)
     while self.resources_left():
       self.traverse(max_depth=1)
       result = self.rollout(max_depth=1)

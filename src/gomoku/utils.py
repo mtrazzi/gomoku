@@ -1,5 +1,6 @@
-import numpy as np
 import copy
+
+import numpy as np
 
 SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
 
