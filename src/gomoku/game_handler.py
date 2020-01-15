@@ -260,8 +260,12 @@ class GameHandler(object):
                         for move in captures]
     return list(set(all_captures) - set(all_captures_old))
 
+  def last_move(self):
+    return "(empty board)" if not self.move_history else self.move_history[-1]
+
   def __str__(self):
-    player, opponent = self.players[self.current], self.players[1 - self.current]
+    player, opponent = (self.players[self.current],
+                        self.players[1 - self.current])
 
     representation = f"\033[2J\033[H{self.board}"
     representation += f"X: {self.players[0].captures} stone captured\n"

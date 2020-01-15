@@ -9,9 +9,9 @@ from gomoku.rules import Rules
 from gomoku.tree import Tree
 
 TIME_LIMIT = 0.5
-BREAKING_TIME = 0.1 * TIME_LIMIT
+BREAKING_TIME = 0.45 * TIME_LIMIT
 UCB_CONSTANT = 2
-ROLLOUT_TIME = 0.01 * TIME_LIMIT
+ROLLOUT_TIME = 0.25 * TIME_LIMIT
 
 
 class MCTSAgent(MiniMaxAgent):
@@ -24,6 +24,7 @@ class MCTSAgent(MiniMaxAgent):
     self.d_visit = {}
     self.algorithm_name = 'mcts'
     self.depth = depth
+    self.tree = None
 
   def find_move(self, gh):
     if gh.board.empty_board():
@@ -32,7 +33,8 @@ class MCTSAgent(MiniMaxAgent):
     move = self.mcts()
     if time.time()-self.start > self.time_limit:
       exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
-    self.print_tree()
+    print(self.tree)
+    self.tree = self.tree.traverse_one(move)
     return move
 
   def pick_random(self):
@@ -57,7 +59,10 @@ class MCTSAgent(MiniMaxAgent):
            counter < max_depth):
       self.rollout_policy()
       counter += 1
-    return self.result()
+    result = self.result()
+    for _ in range(counter):
+      self.gh.undo_move()
+    return result
 
   def result(self):
     player = Rules.check_winner(self.gh.board, self.gh.players)
@@ -84,12 +89,14 @@ class MCTSAgent(MiniMaxAgent):
     return self.get_id() == self.root
 
   def update_stats(self, result):
-    return 0
+    # print(f"Incrementing value {self.current_node.value} (last move={self.gh.move_history[-1]}) by {result}")
+    self.current_node.value += result
 
   def backpropagate(self, result):
     if self.is_root():
       return
-    self.gh.stats = self.update_stats(result)
+    self.update_stats(result)
+    self.current_node = self.current_node.parent
     self.gh.undo_move()
     self.backpropagate(result)
 
@@ -143,13 +150,14 @@ class MCTSAgent(MiniMaxAgent):
     for move in self.gh.child_list:
       self.gh.do_move(move)
       nb_visits = self.get_visits(move)
-      w = (self.gh.value +
+      w = (self.current_node.value +
            UCB_CONSTANT * np.sqrt(np.log(parent_visits) / nb_visits))
       weights.append(w)
       visits.append(nb_visits)
       self.gh.undo_move()
     distribution = np.array([w / sum(weights)
                             if w > 0 else 1e-15 for w in weights])
+    # print(distribution)
     distribution = (1 / np.sum(distribution)) * distribution
     idx = np.random.choice(len(self.gh.child_list), p=distribution)
     return self.gh.child_list[idx], visits[idx]
@@ -162,27 +170,28 @@ class MCTSAgent(MiniMaxAgent):
   def traverse(self, max_depth=1):
     parent_visits = 1
     depth = 0
-    child = None
     while not self.fully_expanded():
       move, parent_visits = self.ucb_valid(parent_visits)
       self.update_visits(move)
       self.gh.do_move(move)
       depth += 1
-      parent = self.tree if child is None else child
-      child = parent.add_child(move)
+      self.current_node = self.current_node.traverse_one(move)
       if depth >= max_depth:
         return
     self.pick_unvisited()  # different from gfg code
 
-  def print_tree(self):
-    for pre, _, node in RenderTree(self.tree):
-      print("%s%s (n_visits = %2d)" % (pre, node.name, node.n_visits))
-
   def mcts(self):
     self.root = self.get_id()
-    self.tree = Tree("Root", n_visits=1)
+    print(f"at the beginning: id is {self.root}")
+    last_move_played = self.gh.last_move()
+    if self.tree == None:
+      self.tree = Tree(last_move_played, n_visits=1)
+    else:
+      self.tree = self.tree.traverse_one(last_move_played)
+    self.current_node = self.tree
     while self.resources_left():
-      self.traverse(max_depth=1)
-      result = self.rollout(max_depth=1)
+      self.traverse(max_depth=3)
+      result = self.rollout(max_depth=2)
+      print(f"\n### result was {result}\n")
       self.backpropagate(result)
     return self.best_child()
