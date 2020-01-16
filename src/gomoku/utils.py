@@ -177,6 +177,6 @@ def best_values(values, depth, i):
 
 
 def ucb(val, parent_visits, n_visits, ucb_constant=2):
-  if n_visits == 0:
-    return val
-  return val + np.log(parent_visits) / n_visits
+  win_ratio = val / (n_visits + 1)
+  exploration = ucb_constant * np.sqrt(np.log(parent_visits) / (n_visits + 1))
+  return win_ratio + exploration

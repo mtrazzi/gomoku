@@ -10,7 +10,8 @@ from gomoku.tree import Tree
 
 TIME_LIMIT = 5
 BREAKING_TIME = 0.45 * TIME_LIMIT
-ROLLOUT_TIME = 0.5 * TIME_LIMIT
+ROLLOUT_TIME = 0.25 * TIME_LIMIT
+UCB_CONSTANT = np.sqrt(2)
 
 
 class MCTSAgent(MiniMaxAgent):
@@ -40,10 +41,7 @@ class MCTSAgent(MiniMaxAgent):
     while True:
       nb_child = len(self.gh.child_list)
       rand_idx = np.random.randint(0, nb_child)
-      rand_move = self.gh.child_list[rand_idx]
-      player, _ = self.return_players()
-      if self.gh.can_place(*rand_move):
-        return rand_move
+      return self.gh.child_list[rand_idx]
 
   def rollout_policy(self):
     self.gh.do_move(self.pick_random())
@@ -54,8 +52,7 @@ class MCTSAgent(MiniMaxAgent):
 
   def rollout(self, max_depth=np.inf, max_time=ROLLOUT_TIME):
     start, counter = time.time(), 0
-    while (not self.is_terminal() and (start - time.time()) < ROLLOUT_TIME and
-           counter < max_depth):
+    while ((start - time.time()) < ROLLOUT_TIME and counter < max_depth):
       self.rollout_policy()
       counter += 1
     result = self.result()
@@ -68,9 +65,9 @@ class MCTSAgent(MiniMaxAgent):
     if player is None:
       return 0
     elif player.color == self.color:
-      return 100
+      return 1
     else:
-      return -100
+      return -1
 
   def best_child(self):
     return self.tree.most_attr_child('value')
@@ -107,10 +104,7 @@ class MCTSAgent(MiniMaxAgent):
 
   def ucb_valid(self):
     """Return valid move sampled via ucb."""
-    while True:
-      move = self.ucb_sample()
-      if self.gh.can_place(*move):
-        return move
+    return self.ucb_sample()
 
   def ucb_sample(self):
     """
@@ -120,13 +114,11 @@ class MCTSAgent(MiniMaxAgent):
     """
     if not self.current_node.is_child():
       return self.pick_random()
-    weights = self.current_node.get_ucb()
-    # print(f"weights={weights}")
-    weights = weights + np.min(weights) # avoiding negative weigths
+    weights = self.current_node.get_ucb(UCB_CONSTANT)
+    weights = weights - np.min(weights)  # avoiding negative weigths
     distribution = np.array([w / sum(weights)
                             if w > 0 else 1e-15 for w in weights])
     distribution = (1 / np.sum(distribution)) * distribution
-    # print(f"distribution={distribution}")
     idx = np.random.choice(len(weights), p=distribution)
     return self.gh.child_list[idx]
 
@@ -153,7 +145,7 @@ class MCTSAgent(MiniMaxAgent):
     self.current_node = self.tree
     self.root = self.get_id()
     while self.resources_left():
-      self.traverse(max_depth=1)
-      result = self.rollout(max_depth=2)
+      self.traverse(max_depth=2)
+      result = self.rollout(max_depth=1)
       self.backpropagate(result)
     return self.best_child()

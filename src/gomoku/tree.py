@@ -30,8 +30,9 @@ class Tree(Node):
     test = Tree(move, n_visits=n_visits, parent=self)
     return test
 
-  def get_ucb(self, u=2):
-    return [ucb(n.value, n.parent.n_visits, n.n_visits) for n in self.children]
+  def get_ucb(self, ucb_constant=2):
+    return [ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant) for n in
+            self.children]
 
   def attr_list(self, attr_name):
     def _get_attr(node): return getattr(node, attr_name)
