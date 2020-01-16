@@ -261,7 +261,7 @@ class GameHandler(object):
     return list(set(all_captures) - set(all_captures_old))
 
   def last_move(self):
-    return "(empty board)" if not self.move_history else self.move_history[-1]
+    return (-1, -1) if not self.move_history else self.move_history[-1]
 
   def __str__(self):
     player, opponent = (self.players[self.current],

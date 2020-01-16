@@ -4,7 +4,6 @@ import numpy as np
 
 SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
 
-
 def coordinates(x, y, dx, dy, nb_consecutive=5):
   """Coordinates of consecutive intersections from (x,y) directed by (dx,dy)."""
   return [(x + i * dx, y + i * dy) for i in range(nb_consecutive)]
@@ -175,3 +174,9 @@ def get_player_name(player):
 
 def best_values(values, depth, i):
   return values[depth - 1] if i < 2 else values[depth][:i]
+
+
+def ucb(val, parent_visits, n_visits, ucb_constant=2):
+  if n_visits == 0:
+    return val
+  return val + np.log(parent_visits) / n_visits

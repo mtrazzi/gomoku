@@ -8,10 +8,9 @@ from gomoku.minimax import MiniMaxAgent
 from gomoku.rules import Rules
 from gomoku.tree import Tree
 
-TIME_LIMIT = 0.5
+TIME_LIMIT = 5
 BREAKING_TIME = 0.45 * TIME_LIMIT
-UCB_CONSTANT = 2
-ROLLOUT_TIME = 0.25 * TIME_LIMIT
+ROLLOUT_TIME = 0.5 * TIME_LIMIT
 
 
 class MCTSAgent(MiniMaxAgent):
@@ -69,129 +68,92 @@ class MCTSAgent(MiniMaxAgent):
     if player is None:
       return 0
     elif player.color == self.color:
-      return 1
+      return 100
     else:
-      return -1
-
-  def get_attr(self, move, attr):
-    """Access certain attribute of a child."""
-    self.gh.do_move(move)
-    result = getattr(self.gh, attr)
-    self.gh.undo_move()
-    return result
+      return -100
 
   def best_child(self):
-    def get_nb_visit(move): self.get_attr(move, 'visits')
-    nb_visits = map(get_nb_visit, self.gh.child_list)
-    return self.gh.child_list[np.argmax(nb_visits)]
+    return self.tree.most_attr_child('value')
 
   def is_root(self):
     return self.get_id() == self.root
 
   def update_stats(self, result):
-    # print(f"Incrementing value {self.current_node.value} (last move={self.gh.move_history[-1]}) by {result}")
     self.current_node.value += result
 
-  def backpropagate(self, result):
-    if self.is_root():
-      return
+  def backpropagate_one(self, result=0):
     self.update_stats(result)
     self.current_node = self.current_node.parent
     self.gh.undo_move()
-    self.backpropagate(result)
+
+  def backpropagate(self, result):
+    while not self.is_root():
+      self.backpropagate_one(result)
 
   def resources_left(self):
     return (time.time() - self.start) < BREAKING_TIME
 
   def fully_expanded(self):
-    current_keys = self.d_visit.keys()
-    for move in self.gh.child_list:
-      move_id = self.get_action_value_id(move)
-      if move_id not in current_keys:
-        return False
-    return True
+    return len(self.gh.child_list) == len(self.current_node.children)
+
+  def unvisited_move(self):
+    possible_moves = self.current_node.child_moves()
+    if possible_moves is None:
+      return self.pick_random()
+    return possible_moves[np.random.randint(len(possible_moves))]
 
   def pick_unvisited(self):
-    if not self.resources_left():
-      self.gh.do_move(self.pick_random())
-    else:
-      for move in self.gh.child_list:
-        if not self.is_visited(move):
-          self.gh.do_move(move)
-          self.update_visits(move)
-          break
+    self.traverse_one(self.unvisited_move())
 
-  def ucb_valid(self, parent_visits):
+  def ucb_valid(self):
     """Return valid move sampled via ucb."""
     while True:
-      move, parent_visits = self.ucb_sample(parent_visits)
+      move = self.ucb_sample()
       if self.gh.can_place(*move):
-        return move, parent_visits
+        return move
 
-  def get_action_value_id(self, move):
-    node_id = self.get_id()
-    return str(node_id) + str(move)
-
-  def is_visited(self, move):
-    move_id = self.get_action_value_id(move)
-    return move_id in self.d_visit.keys()
-
-  def get_visits(self, move):
-    move_id = self.get_action_value_id(move)
-    return self.d_visit[move_id] if move_id in self.d_visit.keys() else 1
-
-  def ucb_sample(self, parent_visits):
+  def ucb_sample(self):
     """
     Returns a child move using UCB exploration/exploitation tradeoff, and the
     number of visits of the edge from parent to child.
     cf. https://www.cs.swarthmore.edu/~bryce/cs63/s16/slides/2-15_MCTS.pdf
     """
-    weights, visits = [], []
-    for move in self.gh.child_list:
-      self.gh.do_move(move)
-      nb_visits = self.get_visits(move)
-      w = (self.current_node.value +
-           UCB_CONSTANT * np.sqrt(np.log(parent_visits) / nb_visits))
-      weights.append(w)
-      visits.append(nb_visits)
-      self.gh.undo_move()
+    if not self.current_node.is_child():
+      return self.pick_random()
+    weights = self.current_node.get_ucb()
+    # print(f"weights={weights}")
+    weights = weights + np.min(weights) # avoiding negative weigths
     distribution = np.array([w / sum(weights)
                             if w > 0 else 1e-15 for w in weights])
-    # print(distribution)
     distribution = (1 / np.sum(distribution)) * distribution
-    idx = np.random.choice(len(self.gh.child_list), p=distribution)
-    return self.gh.child_list[idx], visits[idx]
+    # print(f"distribution={distribution}")
+    idx = np.random.choice(len(weights), p=distribution)
+    return self.gh.child_list[idx]
 
-  def update_visits(self, move):
-    move_id = self.get_action_value_id(move)
-    self.d_visit[move_id] = ((self.d_visit[move_id] + 1) if move_id in
-                             self.d_visit.keys() else 1)
+  def traverse_one(self, move):
+    self.gh.do_move(move)
+    self.current_node = self.current_node.traverse_one(move)
 
   def traverse(self, max_depth=1):
-    parent_visits = 1
     depth = 0
     while not self.fully_expanded():
-      move, parent_visits = self.ucb_valid(parent_visits)
-      self.update_visits(move)
-      self.gh.do_move(move)
+      move = self.ucb_valid()
       depth += 1
-      self.current_node = self.current_node.traverse_one(move)
+      self.traverse_one(move)
       if depth >= max_depth:
-        return
-    self.pick_unvisited()  # different from gfg code
+        break
+    self.pick_unvisited()
 
   def mcts(self):
-    self.root = self.get_id()
-    print(f"at the beginning: id is {self.root}")
     last_move_played = self.gh.last_move()
-    if self.tree == None:
-      self.tree = Tree(last_move_played, n_visits=1)
+    if self.tree is None:
+      self.tree = Tree(last_move_played)
     else:
       self.tree = self.tree.traverse_one(last_move_played)
     self.current_node = self.tree
+    self.root = self.get_id()
     while self.resources_left():
-      self.traverse(max_depth=3)
+      self.traverse(max_depth=1)
       result = self.rollout(max_depth=2)
-      print(f"\n### result was {result}\n")
       self.backpropagate(result)
     return self.best_child()
