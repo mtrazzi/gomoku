@@ -132,10 +132,13 @@ class MiniMaxAgent(Agent):
     return move_to_play
 
   def iterative_deepening(self, moves, initial_values):
-    values = [list(initial_values)] + [[0] * len(moves) * (self.depth - 1)]
+    values = [list(initial_values)] + [[0] * len(moves) for _ in
+                                       range(self.depth - 1)]
     for depth in range(1, self.depth):
+      print(f"trying depth {depth}")
       self.ite_deep_depth = depth
       for i in range(len(moves)):
+        print(f"i = {i}")
         if time.time() - self.start >= BREAKING_TIME:
           return best_values(values, depth, i)
         if self.algorithm_name == 'mtdf':
