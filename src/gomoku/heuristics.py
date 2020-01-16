@@ -241,18 +241,11 @@ def heuristic(position, color, my_turn, stones=[], past_scores=None, depth=0):
     How the situation looks like taking into account the two players.
   """
   past_score_1, past_score_2 = past_scores if past_scores else (None, None)
-  if depth == 0:
-    first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
+  first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
                                                      stones, past_score_1)
-    second_score, new_past_scores_2 = score_for_color(position, opposite(color),
+  second_score, new_past_scores_2 = score_for_color(position, opposite(color),
                                                       not my_turn, stones,
                                                       past_score_2)
-  else:
-    first_score, new_past_scores_1 = basic_color_score(position, color, my_turn,
-                                                       stones, past_score_1)
-    second_score, new_past_scores_2 = basic_color_score(position, opposite
-                                                        (color), not my_turn,
-                                                        stones, past_score_2)
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 
