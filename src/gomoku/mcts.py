@@ -7,10 +7,11 @@ from gomoku.minimax import MiniMaxAgent
 from gomoku.rules import Rules
 from gomoku.tree import Tree
 
-TIME_LIMIT = 5
+TIME_LIMIT = 10
 BREAKING_TIME = 0.45 * TIME_LIMIT
 ROLLOUT_TIME = 0.45 * TIME_LIMIT
 UCB_CONSTANT = np.sqrt(2)
+ALIGN_FIVE_VALUE = 1e2
 
 
 class MCTSAgent(MiniMaxAgent):
@@ -30,7 +31,6 @@ class MCTSAgent(MiniMaxAgent):
     else:
       self.tree = self.tree.traverse_one(last_move_played)
     self.current_node = self.tree
-    self.root = self.get_id()
 
   def find_move(self, gh):
     if gh.board.empty_board():
@@ -68,6 +68,10 @@ class MCTSAgent(MiniMaxAgent):
     return result
 
   def result(self):
+    return self.captures_diff() + ALIGN_FIVE_VALUE * self.align_five_score()
+    # return self.align_five_score()
+
+  def align_five_score(self):
     player = Rules.check_winner_basic(self.gh.board, self.gh.players)
     if player is None:
       return 0
@@ -130,8 +134,18 @@ class MCTSAgent(MiniMaxAgent):
     self.gh.do_move(move)
     self.current_node = self.current_node.traverse_one(move)
 
+  def captures_diff(self):
+    capt_t = self.gh.get_player_captures()
+    idx_mcts, idx_opp = self.color - 1, 1 - (self.color - 1)
+    agent_capt = capt_t[idx_mcts] - self.capt_t0[idx_mcts]
+    opp_capt = capt_t[idx_opp] - self.capt_t0[idx_opp]
+    return agent_capt - opp_capt
+
+  def is_end_state(self):
+    return self.result() != 0 or self.captures_diff() != 0
+
   def is_terminal(self):
-    return self.result() != 0 or self.current_node.is_leaf
+    return self.is_end_state() or self.current_node.is_leaf
 
   def traverse(self):
     depth = 0
@@ -139,10 +153,12 @@ class MCTSAgent(MiniMaxAgent):
       move = self.ucb_sample()
       depth += 1
       self.traverse_one(move)
-    if self.result() == 0:
+    if self.current_node.is_leaf:
       self.pick_unvisited()
 
   def mcts(self, n_iterations=1):
+    self.root, self.capt_t0 = self.get_id(), self.gh.get_player_captures()
+    self.current_node = self.tree
     for _ in range(n_iterations):
       self.traverse()
       result = self.rollout(max_depth=self.rollout_depth)
