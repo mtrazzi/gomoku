@@ -1,7 +1,9 @@
+import copy
 import time
 import tkinter as tk
 
 from gomoku.agent import Agent
+from gomoku.mcts import MCTSAgent
 from gomoku.visualizer.canvas import Canvas
 from gomoku.visualizer.frames import Frames
 from gomoku.visualizer.utils import COLOR, WINDOW_WIDTH
@@ -91,6 +93,11 @@ class Visualizer(object):
       move = player.find_move(self.gameHandler)
     else:
       self.playerInput = True
+      opponent = self.gameHandler.players[1 - current]
+      if isinstance(opponent, MCTSAgent) and opponent.last_move != (-2, -2):
+        opponent.gh = copy.deepcopy(self.gameHandler)
+        opponent.root = opponent.get_id()
+        opponent.mcts(1)
       if self.move is None:
         self.root.after(1, self.start)
         return

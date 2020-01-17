@@ -25,7 +25,7 @@ class Agent(Player):
   """
   def __init__(self, color=1, depth=10):
     super().__init__(color)
-    self.last_move = (9, 9)
+    self.last_move = (-2, -2)
     self.depth = depth
     self.gameHandler = None
     self.opponent = None

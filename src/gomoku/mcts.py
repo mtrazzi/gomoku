@@ -23,21 +23,39 @@ class MCTSAgent(MiniMaxAgent):
     self.tree = None
     self.rollout_depth = depth
 
+  def update_tree(self):
+    last_move_played = tuple(self.gh.last_move())
+    if self.tree is None:
+      self.tree = Tree(last_move_played)
+    else:
+      self.tree = self.tree.traverse_one(last_move_played)
+    self.current_node = self.tree
+    self.root = self.get_id()
+
   def find_move(self, gh):
     if gh.board.empty_board():
       return gh.board.center()
     self.gh, self.start = gh, time.time()
-    move = self.mcts()
+    self.update_tree()
+    while self.resources_left():
+      self.mcts()
+    move = self.best_child()
     if time.time()-self.start > TIME_LIMIT:
       exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
     self.tree = self.tree.traverse_one(move)
+    self.current_node = self.tree
     return move
 
   def pick_random(self):
-    return random.choice(self.gh.child_list)
+    while True:
+      move = random.choice(self.gh.child_list)
+      if self.gh.board.is_empty(*move):
+        break
+    return move
 
   def rollout_policy(self):
-    self.gh.basic_move(self.pick_random())
+    random_move = self.pick_random()
+    self.gh.basic_move(random_move)
 
   def rollout(self, max_depth=np.inf, max_time=ROLLOUT_TIME):
     start, counter = time.time(), 0
@@ -124,20 +142,8 @@ class MCTSAgent(MiniMaxAgent):
     if self.result() == 0:
       self.pick_unvisited()
 
-  def mcts(self):
-    last_move_played = self.gh.last_move()
-    if self.tree is None:
-      self.tree = Tree(last_move_played)
-    else:
-      self.tree = self.tree.traverse_one(last_move_played)
-    self.current_node = self.tree
-    self.root = self.get_id()
-    counter = 0
-    while self.resources_left():
-      counter += 1
-      if counter % 100 == 0:
-        print(counter)
+  def mcts(self, n_iterations=1):
+    for _ in range(n_iterations):
       self.traverse()
       result = self.rollout(max_depth=self.rollout_depth)
       self.backpropagate(result)
-    return self.best_child()
