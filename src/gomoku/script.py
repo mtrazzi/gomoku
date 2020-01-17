@@ -13,7 +13,7 @@ class Script(object):
       lines = [re.sub('#.*', '', line.strip()) for line in f]
       lines = [line for line in lines if line]
       try:
-        self.move = [[int(x) - 1 for x in line.split()] for line in lines]
+        self.move = [[int(x) for x in line.split()] for line in lines]
       except Exception:
         raise Exception("File not well formatted.")
 

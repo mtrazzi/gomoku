@@ -179,3 +179,10 @@ class Rules(object):
       else:
         player.aligned_five_prev = False
     return None
+
+  @staticmethod
+  def check_winner_basic(board, players):
+    for player in players:
+      if Rules.aligned_win(board, player):
+        return player
+    return None

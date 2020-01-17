@@ -22,8 +22,8 @@ def get_gh_from_script(filename):
 
 BLACK = 1
 MCTS_EVAL = {
-  'four': [(6, 12), (11, 7)],
-  'four_opponent': [(6, 12), (11, 7)],
+  'four': [(7, 13), (12, 8)],
+  # 'four_opponent': [(7, 13)],
 }
 FILES = MCTS_EVAL.keys()
 NODES = {path: get_gh_from_script(path) for path in FILES}
