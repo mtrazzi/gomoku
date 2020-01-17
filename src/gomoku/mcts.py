@@ -8,7 +8,7 @@ from gomoku.minimax import MiniMaxAgent
 from gomoku.rules import Rules
 from gomoku.tree import Tree
 
-TIME_LIMIT = 5
+TIME_LIMIT = 2
 BREAKING_TIME = 0.45 * TIME_LIMIT
 ROLLOUT_TIME = 0.25 * TIME_LIMIT
 UCB_CONSTANT = np.sqrt(2)
@@ -33,7 +33,7 @@ class MCTSAgent(MiniMaxAgent):
     move = self.mcts()
     if time.time()-self.start > self.time_limit:
       exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
-    print(self.tree)
+    # print(self.tree)
     self.tree = self.tree.traverse_one(move)
     return move
 
@@ -44,7 +44,7 @@ class MCTSAgent(MiniMaxAgent):
       return self.gh.child_list[rand_idx]
 
   def rollout_policy(self):
-    self.gh.do_move(self.pick_random())
+    self.gh.basic_move(self.pick_random())
 
   def is_terminal(self):
     return (Rules.check_winner(self.gh.board, self.gh.players) is not None or
@@ -57,7 +57,7 @@ class MCTSAgent(MiniMaxAgent):
       counter += 1
     result = self.result()
     for _ in range(counter):
-      self.gh.undo_move()
+      self.gh.basic_undo()
     return result
 
   def result(self):
@@ -144,8 +144,13 @@ class MCTSAgent(MiniMaxAgent):
       self.tree = self.tree.traverse_one(last_move_played)
     self.current_node = self.tree
     self.root = self.get_id()
+    counter = 0
     while self.resources_left():
+      counter += 1
+      if counter % 100 == 0:
+        print(counter)
       self.traverse(max_depth=2)
-      result = self.rollout(max_depth=1)
+      result = self.rollout(max_depth=5)
       self.backpropagate(result)
+    # print(self.gh)
     return self.best_child()

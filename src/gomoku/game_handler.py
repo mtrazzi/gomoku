@@ -59,10 +59,6 @@ class GameHandler(object):
     self.helpAgent = MiniMaxAgent()
     self.begin = -1
     self.child_list = []
-    self.total_moves_played = 0
-    self.visits = 0
-    self.stats = 0
-    self.value = 0
 
   def restart(self):
     """Reset all attributes to their initial states"""
@@ -127,7 +123,6 @@ class GameHandler(object):
     succeed: bool
       True if we can play at this intersection, else False
     """
-    player = self.players[self.current]
 
     if not self.can_place(*move):
       return False
@@ -176,7 +171,6 @@ class GameHandler(object):
 
   def do_move(self, move):
     player = self.players[self.current]
-    self.total_moves_played += 1
     self.state_history.append([player.last_move,
                                player.captures,
                                player.aligned_five_prev])
@@ -196,8 +190,26 @@ class GameHandler(object):
     self.current = 1 - self.current
     return True
 
+  def basic_move(self, move):
+    player = self.players[self.current]
+    self.move_history.append(move)
+    self.state_history.append([player.last_move,
+                               player.captures,
+                               player.aligned_five_prev])
+    self.board.place(*move, player.color)
+    player.last_move = tuple(move)
+
+  def basic_undo(self):
+    x, y = self.move_history.pop()
+    last_move, captures, aligned_five_prev = self.state_history.pop()
+    stone = self.board.board[x][y]
+    player = self.players[0 if stone == 1 else 1]
+    player.last_move = last_move
+    player.captures = captures
+    player.aligned_five_prev = aligned_five_prev
+    self.board.remove(x, y)
+
   def undo_move(self):
-    self.total_moves_played -= 1
     x, y = self.move_history.pop()
     previous_dead = self.capture_history.pop()
     last_move, captures, aligned_five_prev = self.state_history.pop()
