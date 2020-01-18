@@ -24,8 +24,8 @@ class Tree(Node):
     return test
 
   def get_ucb(self, ucb_constant=2):
-    return [ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant) for n in
-            self.children]
+    return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
+                     for n in self.children])
 
   def attr_list(self, attr_name):
     return list(map(get_attr(attr_name), self.children))

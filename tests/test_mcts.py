@@ -22,8 +22,8 @@ def get_gh_from_script(filename):
 
 BLACK = 1
 MCTS_EVAL = {
-  'four': [(7, 13), (12, 8)],
-  # 'four_opponent': [(7, 13)],
+  # 'four': [(7, 13), (12, 8)],
+  'four_opponent': [(7, 13)],
 }
 FILES = MCTS_EVAL.keys()
 NODES = {path: get_gh_from_script(path) for path in FILES}
@@ -34,6 +34,6 @@ def test_mcts(problem):
   board_name, best_moves = problem
   game_handler = NODES[board_name]
   print(game_handler)
-  black_mcts_agent = MCTSAgent(BLACK, depth=1)
+  black_mcts_agent = MCTSAgent(BLACK, depth=16)
   best_move = black_mcts_agent.find_move(game_handler)
   assert best_move in best_moves

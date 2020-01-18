@@ -6,13 +6,16 @@ import numpy as np
 from gomoku.minimax import MiniMaxAgent
 from gomoku.rules import Rules
 from gomoku.tree import Tree
+from gomoku.utils import SLOPES, were_impacted_slope, dist_sort
 
-TIME_LIMIT = 10
+TIME_LIMIT = 5
 BREAKING_TIME = 0.45 * TIME_LIMIT
 ROLLOUT_TIME = 0.45 * TIME_LIMIT
-UCB_CONSTANT = np.sqrt(2)
+UCB_CONSTANT = 100 * np.sqrt(2)
 ALIGN_FIVE_VALUE = 1e2
-
+MAX_IMP, MAX_CHILD, MAX_RANDOM = 1e1, 1e2, 1e3
+MAX_LIST = [MAX_IMP, MAX_CHILD, MAX_RANDOM]
+MAX_MOVES = 4
 
 class MCTSAgent(MiniMaxAgent):
   """Agent using Monte Carlo Tree Search. Inspired from:
@@ -24,6 +27,21 @@ class MCTSAgent(MiniMaxAgent):
     self.tree = None
     self.rollout_depth = depth
 
+  def relevant_moves(self):
+    relev_mov, idx = [], 0
+    while (idx < len(self.gh.move_history)
+           and len(relev_mov) < self.rollout_depth):
+      x, y = self.gh.move_history[-idx-1]
+      for move in reversed(self.gh.child_list):
+        if len(relev_mov) >= self.rollout_depth:
+          break
+        for (dx, dy) in SLOPES:
+          if were_impacted_slope([move], x, y, dx, dy):
+            relev_mov.append(move)
+            break
+      idx += 1
+    return relev_mov
+
   def update_tree(self):
     last_move_played = tuple(self.gh.last_move())
     if self.tree is None:
@@ -32,26 +50,43 @@ class MCTSAgent(MiniMaxAgent):
       self.tree = self.tree.traverse_one(last_move_played)
     self.current_node = self.tree
 
+  def close_moves(self):
+    children = self.gh.child_list
+    return children if len(children) < 4 else children[-4:]
+
   def find_move(self, gh):
     if gh.board.empty_board():
       return gh.board.center()
     self.gh, self.start = gh, time.time()
     self.update_tree()
     while self.resources_left():
-      self.mcts()
+      self.mcts(n_iterations=1)
     move = self.best_child()
     if time.time()-self.start > TIME_LIMIT:
       exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
+    print(self.tree)
     self.tree = self.tree.traverse_one(move)
     self.current_node = self.tree
     return move
 
-  def pick_random(self):
-    while True:
-      move = random.choice(self.gh.child_list)
+  def pick_random_list(self, move_list, max_counter):
+    counter = 0
+    while True and counter < max_counter:
+      move = random.choice(move_list)
       if self.gh.board.is_empty(*move):
-        break
-    return move
+        return move
+      counter += 1
+    return None
+
+  def pick_random(self):
+    size = self.gh.size
+    random_list = [(i, j) for i in range(size) for j in range(size)]
+    move_lists = [self.imp_moves, self.gh.child_list, random_list]
+    for (move_list, max_counter) in zip(move_lists, MAX_LIST):
+      move = self.pick_random_list(move_list, max_counter)
+      if move is not None:
+        return move
+    return None
 
   def rollout_policy(self):
     random_move = self.pick_random()
@@ -69,7 +104,6 @@ class MCTSAgent(MiniMaxAgent):
 
   def result(self):
     return self.captures_diff() + ALIGN_FIVE_VALUE * self.align_five_score()
-    # return self.align_five_score()
 
   def align_five_score(self):
     player = Rules.check_winner_basic(self.gh.board, self.gh.players)
@@ -123,10 +157,8 @@ class MCTSAgent(MiniMaxAgent):
     if self.current_node.is_leaf:
       return self.pick_random()
     weights = self.current_node.get_ucb(UCB_CONSTANT)
-    weights = weights - np.min(weights)
-    distribution = np.array([w / sum(weights)
-                            if w > 0 else 1e-15 for w in weights])
-    distribution = (1 / np.sum(distribution)) * distribution
+    weights = weights - np.min(weights) + 1e-15
+    distribution = (1 / np.sum(weights)) * weights
     idx = np.random.choice(len(weights), p=distribution)
     return self.gh.child_list[idx]
 
@@ -147,7 +179,7 @@ class MCTSAgent(MiniMaxAgent):
   def is_terminal(self):
     return self.is_end_state() or self.current_node.is_leaf
 
-  def traverse(self):
+  def traverse(self, max_depth=1):
     depth = 0
     while not self.is_terminal():
       move = self.ucb_sample()
@@ -158,7 +190,8 @@ class MCTSAgent(MiniMaxAgent):
 
   def mcts(self, n_iterations=1):
     self.root, self.capt_t0 = self.get_id(), self.gh.get_player_captures()
-    self.current_node = self.tree
+    self.current_node, last_move = self.tree, self.gh.last_move()
+    self.imp_moves = dist_sort(last_move, self.relevant_moves())[:MAX_MOVES]
     for _ in range(n_iterations):
       self.traverse()
       result = self.rollout(max_depth=self.rollout_depth)

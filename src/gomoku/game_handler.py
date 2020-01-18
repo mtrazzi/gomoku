@@ -1,6 +1,7 @@
 import copy
 import time
 
+import line_profiler
 import numpy as np
 
 from gomoku.agent import Agent
@@ -9,8 +10,6 @@ from gomoku.rules import Rules
 from gomoku.utils import (get_player_name, is_there_stones_around,
                           nearby_stones, update_child_after_move)
 
-
-import line_profiler
 
 class GameHandler(object):
   """Class GameHandler

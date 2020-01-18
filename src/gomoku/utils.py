@@ -178,11 +178,18 @@ def best_values(values, depth, i):
 
 def ucb(val, parent_visits, n_visits, ucb_constant=2):
   win_ratio = val / (n_visits + 1)
-  exploration = ucb_constant * np.sqrt(np.log(parent_visits + 1) / (n_visits + 1))
+  exploration = (ucb_constant *
+                 np.sqrt(np.log(parent_visits + 1) / (n_visits + 1)))
   # print(f"win_ratio={win_ratio} vs. exploration={exploration}")
   return win_ratio + exploration
+
 
 def get_attr(attr_name):
   def get_attr_node(node):
     return getattr(node, attr_name)
   return get_attr_node
+
+
+def dist_sort(move_0, move_list):
+  dist = [np.linalg.norm(np.subtract(move_0, move)) for move in move_list]
+  return [move for _, move in sorted(zip(dist, move_list))]
