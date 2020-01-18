@@ -11,7 +11,7 @@ from gomoku.utils import SLOPES, were_impacted_slope, dist_sort
 TIME_LIMIT = 5
 BREAKING_TIME = 0.45 * TIME_LIMIT
 ROLLOUT_TIME = 0.45 * TIME_LIMIT
-UCB_CONSTANT = 100 * np.sqrt(2)
+UCB_CONSTANT = np.sqrt(2)
 ALIGN_FIVE_VALUE = 1e2
 MAX_IMP, MAX_CHILD, MAX_RANDOM = 1e1, 1e2, 1e3
 MAX_LIST = [MAX_IMP, MAX_CHILD, MAX_RANDOM]
@@ -49,10 +49,6 @@ class MCTSAgent(MiniMaxAgent):
     else:
       self.tree = self.tree.traverse_one(last_move_played)
     self.current_node = self.tree
-
-  def close_moves(self):
-    children = self.gh.child_list
-    return children if len(children) < 4 else children[-4:]
 
   def find_move(self, gh):
     if gh.board.empty_board():
@@ -156,7 +152,10 @@ class MCTSAgent(MiniMaxAgent):
     """
     if self.current_node.is_leaf:
       return self.pick_random()
-    weights = self.current_node.get_ucb(UCB_CONSTANT)
+    # print(self.imp_moves)
+    weights = self.current_node.get_ucb(self.imp_moves, UCB_CONSTANT)
+    # print(weights)
+    # weights = self.current_node.get_ucb(UCB_CONSTANT)
     weights = weights - np.min(weights) + 1e-15
     distribution = (1 / np.sum(weights)) * weights
     idx = np.random.choice(len(weights), p=distribution)
@@ -192,6 +191,9 @@ class MCTSAgent(MiniMaxAgent):
     self.root, self.capt_t0 = self.get_id(), self.gh.get_player_captures()
     self.current_node, last_move = self.tree, self.gh.last_move()
     self.imp_moves = dist_sort(last_move, self.relevant_moves())[:MAX_MOVES]
+    # print(f"(1) {self.relevant_moves()}")
+    # print(last_move)
+    # print(self.imp_moves)
     for _ in range(n_iterations):
       self.traverse()
       result = self.rollout(max_depth=self.rollout_depth)

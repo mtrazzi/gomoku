@@ -21,16 +21,29 @@ def get_gh_from_script(filename):
 
 
 BLACK = 1
-MCTS_EVAL = {
-  # 'four': [(7, 13), (12, 8)],
+MCTS_BASIC = {
+  'four': [(7, 13), (12, 8)],
+}
+MCTS_OPPONENT = {
   'four_opponent': [(7, 13)],
 }
-FILES = MCTS_EVAL.keys()
+
+FILES = list(MCTS_BASIC.keys()) + list(MCTS_OPPONENT.keys())
 NODES = {path: get_gh_from_script(path) for path in FILES}
 
 
-@pytest.mark.parametrize("problem", MCTS_EVAL.items())
-def test_mcts(problem):
+@pytest.mark.parametrize("problem", MCTS_BASIC.items())
+def test_basic(problem):
+  board_name, best_moves = problem
+  game_handler = NODES[board_name]
+  print(game_handler)
+  black_mcts_agent = MCTSAgent(BLACK, depth=1)
+  best_move = black_mcts_agent.find_move(game_handler)
+  assert best_move in best_moves
+
+@pytest.mark.parametrize('execution_number', range(10))
+@pytest.mark.parametrize("problem", MCTS_OPPONENT.items())
+def test_opponent(problem, execution_number):
   board_name, best_moves = problem
   game_handler = NODES[board_name]
   print(game_handler)

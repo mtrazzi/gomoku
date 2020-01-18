@@ -6,3 +6,7 @@
 9 11
 17 18
 8 12
+# (8, 11) (9, 12) (7, 13) (9, 13) w val=0 and couple 100s of visits
+# (6, 13): a bit less and (6, 14) a bit > 0
+
+# imp_moves = [(8, 13), (9, 12), (7, 13), (9, 13)] smtimes (8, 11)

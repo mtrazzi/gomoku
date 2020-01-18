@@ -23,9 +23,15 @@ class Tree(Node):
     test = Tree(move, n_visits=n_visits, parent=self)
     return test
 
-  def get_ucb(self, ucb_constant=2):
+  def get_ucb(self, move_list, ucb_constant=2):
+    children = [self.traverse_one(move) for move in move_list]
     return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
-                     for n in self.children])
+                     for n in children])
+
+  # def get_ucb(self, ucb_constant=2):
+  #   return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
+  #                    for n in self.children])
+
 
   def attr_list(self, attr_name):
     return list(map(get_attr(attr_name), self.children))
@@ -39,6 +45,7 @@ class Tree(Node):
   def __str__(self):
     s = ''
     for pre, _, node in RenderTree(self):
+      # s += f"{'here' if node.parent is not None and node.parent.parent is None else ''}"
       s += f"{pre}{node.name} (val = {node.value}, n_visits={node.n_visits}, "
       s += f"parent={node.parent.name if node.parent is not None else ''})\n"
     return s
