@@ -14,24 +14,37 @@ class Tree(Node):
     if children:
         self.children = children
 
-  def traverse_one(self, move, n_visits=1, value=0):
+  def traverse_one(self, move, n_visits=1, value=0, increment=1):
     if not self.is_leaf:
       for child in self.children:
         if child.name == str(move):
-          child.n_visits += 1
+          child.n_visits += increment
           return child
     test = Tree(move, n_visits=n_visits, parent=self)
     return test
 
-  def get_ucb(self, move_list, ucb_constant=2):
-    children = [self.traverse_one(move) for move in move_list]
-    return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
-                     for n in children])
+  def update_child_names(self):
+    self.child_names = [child.name for child in self.children] if self.children is not None else []
+
+  # def get_ucb(self, move_list, ucb_constant=2):
+  #   children = [self.traverse_one(move) for move in move_list]
+  #   return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
+  #                    for n in children])
 
   # def get_ucb(self, ucb_constant=2):
   #   return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
   #                    for n in self.children])
 
+  def get_ucb(self, move_list, ucb_constant=2):
+    self.update_child_names()
+    ucb_values = []
+    for move in move_list:
+      if str(move) in self.child_names:
+        n = self.traverse_one(move, increment=0)
+        ucb_values.append(ucb(n.value, self.n_visits, n.n_visits, ucb_constant))
+      else:
+        ucb_values.append(ucb(0, self.n_visits, 0, ucb_constant))
+    return np.array(ucb_values)
 
   def attr_list(self, attr_name):
     return list(map(get_attr(attr_name), self.children))
@@ -41,6 +54,10 @@ class Tree(Node):
 
   def child_moves(self):
     return None if self.is_leaf else self.attr_list('move')
+
+  def print_values(self):
+    for child in self.children:
+      print(f"{child.name} - value = {child.value}")
 
   def __str__(self):
     s = ''

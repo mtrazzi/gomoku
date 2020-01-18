@@ -41,12 +41,12 @@ def test_basic(problem):
   best_move = black_mcts_agent.find_move(game_handler)
   assert best_move in best_moves
 
-@pytest.mark.parametrize('execution_number', range(10))
+@pytest.mark.parametrize('execution_number', range(1))
 @pytest.mark.parametrize("problem", MCTS_OPPONENT.items())
 def test_opponent(problem, execution_number):
   board_name, best_moves = problem
   game_handler = NODES[board_name]
   print(game_handler)
-  black_mcts_agent = MCTSAgent(BLACK, depth=16)
+  black_mcts_agent = MCTSAgent(BLACK, depth=5)
   best_move = black_mcts_agent.find_move(game_handler)
   assert best_move in best_moves
