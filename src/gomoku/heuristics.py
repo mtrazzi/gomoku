@@ -242,10 +242,10 @@ def heuristic(position, color, my_turn, stones=[], past_scores=None, depth=0):
   """
   past_score_1, past_score_2 = past_scores if past_scores else (None, None)
   first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
-                                                     stones, past_score_1)
+                                                   stones, past_score_1)
   second_score, new_past_scores_2 = score_for_color(position, opposite(color),
-                                                      not my_turn, stones,
-                                                      past_score_2)
+                                                    not my_turn, stones,
+                                                    past_score_2)
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 

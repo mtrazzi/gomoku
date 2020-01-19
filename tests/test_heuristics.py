@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 
 from gomoku.board import Board
-from gomoku.minimax import MiniMaxAgent
 from gomoku.game_handler import GameHandler
-from gomoku.heuristics import (score, score_for_color, heuristic)
+from gomoku.heuristics import heuristic, score, score_for_color
+from gomoku.minimax import MiniMaxAgent
 from gomoku.utils import human_move, move
 
 

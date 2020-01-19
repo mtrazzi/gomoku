@@ -1,7 +1,6 @@
 import copy
 import time
 
-import line_profiler
 import numpy as np
 
 from gomoku.agent import Agent

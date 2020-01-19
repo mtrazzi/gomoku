@@ -4,9 +4,8 @@ import pytest
 
 from gomoku.board import Board
 from gomoku.game_handler import GameHandler
-from gomoku.player import Player
-from gomoku.rules import Rules
 from gomoku.mcts import MCTSAgent
+from gomoku.player import Player
 from gomoku.script import Script
 
 
@@ -40,6 +39,7 @@ def test_basic(problem):
   black_mcts_agent = MCTSAgent(BLACK, depth=1)
   best_move = black_mcts_agent.find_move(game_handler)
   assert best_move in best_moves
+
 
 @pytest.mark.parametrize('execution_number', range(1))
 @pytest.mark.parametrize("problem", MCTS_OPPONENT.items())

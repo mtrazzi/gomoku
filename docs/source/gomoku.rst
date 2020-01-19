@@ -12,14 +12,6 @@ gomoku.board module
    :undoc-members:
    :show-inheritance:
 
-gomoku.bot module
------------------
-
-.. automodule:: gomoku.bot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 gomoku.game\_handler module
 ---------------------------
 
@@ -28,10 +20,10 @@ gomoku.game\_handler module
    :undoc-members:
    :show-inheritance:
 
-gomoku.gomoku module
+gomoku.parser module
 --------------------
 
-.. automodule:: gomoku.gomoku
+.. automodule:: gomoku.parser
    :members:
    :undoc-members:
    :show-inheritance:

@@ -24,16 +24,8 @@ class Tree(Node):
     return test
 
   def update_child_names(self):
-    self.child_names = [child.name for child in self.children] if self.children is not None else []
-
-  # def get_ucb(self, move_list, ucb_constant=2):
-  #   children = [self.traverse_one(move) for move in move_list]
-  #   return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
-  #                    for n in children])
-
-  # def get_ucb(self, ucb_constant=2):
-  #   return np.array([ucb(n.value, n.parent.n_visits, n.n_visits, ucb_constant)
-  #                    for n in self.children])
+    self.child_names = ([child.name for child in self.children]
+                        if self.children is not None else [])
 
   def get_ucb(self, move_list, ucb_constant=2):
     self.update_child_names()
@@ -62,7 +54,6 @@ class Tree(Node):
   def __str__(self):
     s = ''
     for pre, _, node in RenderTree(self):
-      # s += f"{'here' if node.parent is not None and node.parent.parent is None else ''}"
       s += f"{pre}{node.name} (val = {node.value}, n_visits={node.n_visits}, "
       s += f"parent={node.parent.name if node.parent is not None else ''})\n"
     return s

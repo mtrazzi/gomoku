@@ -6,7 +6,7 @@ import numpy as np
 from gomoku.minimax import MiniMaxAgent
 from gomoku.rules import Rules
 from gomoku.tree import Tree
-from gomoku.utils import SLOPES, were_impacted_slope, dist_sort
+from gomoku.utils import SLOPES, were_impacted_slope
 
 TIME_LIMIT = 20
 BREAKING_TIME = 0.45 * TIME_LIMIT
@@ -18,6 +18,7 @@ MAX_IMP, MAX_CHILD, MAX_RANDOM = 1e1, 1e2, 1e3
 MAX_LIST = [MAX_CHILD, MAX_RANDOM]
 MAX_MOVES = 10
 MAX_DEPTH = 2
+
 
 class MCTSAgent(MiniMaxAgent):
   """Agent using Monte Carlo Tree Search. Inspired from:
@@ -62,9 +63,7 @@ class MCTSAgent(MiniMaxAgent):
     move = self.best_child()
     if time.time()-self.start > TIME_LIMIT:
       exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
-    # print(self.tree)
     self.tree.print_values()
-    # import ipdb; ipdb.set_trace()
     self.tree = self.tree.traverse_one(move)
     self.current_node = self.tree
     return move
@@ -104,7 +103,6 @@ class MCTSAgent(MiniMaxAgent):
     return result
 
   def result(self):
-    #return self.captures_diff() + ALIGN_FIVE_VALUE * self.align_five_score()
     return self.align_five_score()
 
   def align_five_score(self):
@@ -156,14 +154,7 @@ class MCTSAgent(MiniMaxAgent):
     number of visits of the edge from parent to child.
     cf. https://www.cs.swarthmore.edu/~bryce/cs63/s16/slides/2-15_MCTS.pdf
     """
-    # if self.current_node.is_leaf:
-      # return self.pick_random()
-    # print(self.imp_moves)
-    # weights = self.current_node.get_ucb(self.imp_moves, UCB_CONSTANT)
-    # print(weights)
-    self.imp_moves = dist_sort(self.gh.last_move(), self.relevant_moves())[:MAX_MOVES]
     weights = self.current_node.get_ucb(self.gh.child_list, UCB_CONSTANT)
-    # print(weights)
     weights = weights - np.min(weights) + 1e-15
     distribution = (1 / np.sum(weights)) * weights
     idx = np.random.choice(len(weights), p=distribution)
@@ -186,9 +177,9 @@ class MCTSAgent(MiniMaxAgent):
   def is_terminal(self):
     return self.is_end_state() or self.current_node.is_leaf
 
-  def traverse(self, max_depth=1):
+  def traverse(self, max_depth=2):
     depth = 0
-    while not self.is_terminal():# and depth <= max_depth:
+    while not self.is_terminal() and depth <= max_depth:
       move = self.ucb_sample()
       depth += 1
       self.traverse_one(move)
@@ -197,11 +188,7 @@ class MCTSAgent(MiniMaxAgent):
 
   def mcts(self, n_iterations=1):
     self.root, self.capt_t0 = self.get_id(), self.gh.get_player_captures()
-    self.current_node, last_move = self.tree, self.gh.last_move()
-    # self.imp_moves = dist_sort(last_move, self.relevant_moves())[:MAX_MOVES]
-    # print(f"(1) {self.relevant_moves()}")
-    # print(last_move)
-    # print(self.imp_moves)
+    self.current_node = self.tree
     for _ in range(n_iterations):
       self.traverse(max_depth=MAX_DEPTH)
       result = self.rollout(max_depth=self.rollout_depth)

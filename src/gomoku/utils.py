@@ -1,8 +1,7 @@
-import copy
-
 import numpy as np
 
 SLOPES = np.array([[1, 0], [-1, 1], [0, 1], [1, 1]])
+
 
 def coordinates(x, y, dx, dy, nb_consecutive=5):
   """Coordinates of consecutive intersections from (x,y) directed by (dx,dy)."""
