@@ -2,7 +2,6 @@
 
 import argparse
 
-from gomoku.agents import NegaMaxAgent, PVSAgent
 from gomoku.board import Board
 from gomoku.game_handler import GameHandler
 from gomoku.mcts import MCTSAgent
@@ -14,8 +13,6 @@ from gomoku.visualizer import Visualizer
 AGENTS = {
   "human": Player,
   "minimax": minimax_agent_wrapper("minimax"),
-  "negamax": NegaMaxAgent,
-  "pvs": PVSAgent,
   "alpha_beta": minimax_agent_wrapper("alpha_beta"),
   "alpha_beta_memory": minimax_agent_wrapper("alpha_beta_memory"),
   "mtdf": minimax_agent_wrapper("mtdf"),

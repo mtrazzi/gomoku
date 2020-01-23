@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 from gomoku.agent import Agent
-from gomoku.agents import MiniMaxAgent
+from gomoku.minimax import minimax_agent_wrapper
 from gomoku.rules import Rules
 from gomoku.utils import (get_player_name, is_there_stones_around,
                           nearby_stones, update_child_after_move)
@@ -58,7 +58,10 @@ class GameHandler(object):
     self.state_history = []
     self.turn = 1
     self.winner = None
-    self.helpAgent = MiniMaxAgent()
+    self.helpAgent = minimax_agent_wrapper("mtdf")()
+    for i in range(len(players)):
+      if not isinstance(players[i], Agent):
+        self.helpAgent = minimax_agent_wrapper("mtdf")(players[i].color)
     self.begin = -1
     self.child_list = []
 
@@ -139,7 +142,7 @@ class GameHandler(object):
 
   def move_help(self):
     """Return the best predicted move for the player"""
-    return self.helpAgent.find_move(self)
+    return self.helpAgent.find_move(self)[::-1]
 
   def can_place(self, x, y):
     """See if player can place stone at emplacement (x, y)
