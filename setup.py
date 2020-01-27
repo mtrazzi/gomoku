@@ -18,7 +18,11 @@ setup(
   package_dir={'': 'src'},
   packages=find_packages('src', exclude=('tests', 'docs', './gomoku.py')),
   tests_require=TESTS_REQUIRE,
-  install_requires=['numpy>=1.16.2'],
+  install_requires=[
+    'numpy>=1.16.2',
+    'Pillow>=5.4.1',
+    'anytree>=2.8.0'
+    ],
   extras_require={
     # recommended packages for development
     'dev': [
