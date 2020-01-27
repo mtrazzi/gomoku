@@ -85,17 +85,25 @@ class Rules(object):
     return []
 
   @staticmethod
-  def check_double_threes(board, lst, color):
+  def check_double_threes(board, threes_dict, color):
     threes = 0
-    for l in lst:
-      offset = l[0] - l[1]
-      new_lst = np.append([l[0] + offset], l, axis=0)
-      new_lst = np.append(new_lst, [l[-1] - offset], axis=0)
-      if (new_lst >= [board.size, board.size]).any():
-        continue
-      if (new_lst < [0, 0]).any():
-        continue
-      threes += indefensible_four(board, new_lst, color)
+    for lst in threes_dict.values():
+      for i in range(len(lst)):
+        l = lst[i]
+        offset = l[0] - l[1]
+        new_lst = np.append([l[0] + offset], l, axis=0)
+        new_lst = np.append(new_lst, [l[-1] - offset], axis=0)
+        if (new_lst >= [board.size, board.size]).any():
+          continue
+        if (new_lst < [0, 0]).any():
+          continue
+        indefensibles = indefensible_four(board, new_lst, color)
+        if indefensibles > 0:
+          threes += indefensibles
+          if i == 0 and len(lst) == 5:
+            i = 3
+          else:
+            break
     return threes
 
   @staticmethod
@@ -110,9 +118,10 @@ class Rules(object):
     player: Player
       The current player
     """
-    (x, y), threes, size = player.last_move, [], board.size
-    for dx, dy in SLOPES:
+    (x, y), threes, size = player.last_move, {}, board.size
+    for idx, (dx, dy) in enumerate(SLOPES):
       i = 0
+      threes[idx] = []
       while i != 5:
         _x, _y = (x - i * dx), (y - i * dy)
         bound_x, bound_y = (_x + dx * 4), (_y + dy * 4)
@@ -127,13 +136,9 @@ class Rules(object):
           same += board.is_stone(v, w, player.color)
           free += board.is_empty(v, w)
         if free == 2 and same == 3:
-          threes.append(coords)
-          if i == 0:
-            i = 3
-          else:
-            break
+          threes[idx].append(np.array(coords))
         i += 1
-    return Rules.check_double_threes(board, np.array(threes), player.color) <= 1
+    return Rules.check_double_threes(board, threes, player.color) <= 1
 
   @staticmethod
   def check_captures(board, player):
