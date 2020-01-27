@@ -15,6 +15,7 @@ AGENTS = {
   "minimax": minimax_agent_wrapper("minimax"),
   "alpha_beta": minimax_agent_wrapper("alpha_beta"),
   "alpha_beta_memory": minimax_agent_wrapper("alpha_beta_memory"),
+  "alpha_beta_basic": minimax_agent_wrapper("alpha_beta_basic"),
   "mtdf": minimax_agent_wrapper("mtdf"),
   "mcts": MCTSAgent,
 }
@@ -30,7 +31,7 @@ if __name__ == '__main__':
   parser.add_argument('-H', "--heuristic", type=str, default='?',
                       help="Heuristic function.")
   parser.add_argument('-D', '--depth', type=int, default=2, help="Depth of the \
-                        search tree for Minimax Agents")
+                        search tree for Minimax Agents", choices=range(1, 7))
   parser.add_argument('-p1', "--player1",
                       type=str, default="human",
                       choices=CHOICES,

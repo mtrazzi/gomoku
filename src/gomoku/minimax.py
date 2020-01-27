@@ -10,7 +10,8 @@ from gomoku.rules import Rules
 from gomoku.utils import best_values, opposite
 
 TIME_LIMIT = 0.5
-BREAKING_TIME = 0.4 * TIME_LIMIT
+MTDF_BREAKING_TIME = 0.5 * TIME_LIMIT
+ITE_BREAKING_TIME = 0.6 * TIME_LIMIT
 SIMPLE_EVAL_MAX_TIME = 0.5 * TIME_LIMIT
 
 
@@ -63,7 +64,6 @@ class MiniMaxAgent(Agent):
     self.table = {}
     self.undo_table = {}
     self.time_limit = 0.5
-    self.breaking_time = [0.01, 0.1, 0.3]
     self.color_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.undo_scores = np.zeros((19, 19)), np.zeros((19, 19))
     self.color_scores_dict = {}
@@ -129,11 +129,12 @@ class MiniMaxAgent(Agent):
     return move_to_play
 
   def iterative_deepening(self, moves, initial_values):
-    values = [list(initial_values)] + [[0] * len(moves) * (self.depth - 1)]
+    values = ([list(initial_values)] +
+              [[0 for _ in range(len(moves))] for _ in range(self.depth - 1)])
+    depth, i = 0, len(moves)
     for depth in range(1, self.depth):
-      self.ite_deep_depth = depth
       for i in range(len(moves)):
-        if time.time() - self.start >= BREAKING_TIME:
+        if time.time() - self.start >= ITE_BREAKING_TIME:
           return best_values(values, depth, i)
         if self.algorithm_name == 'mtdf':
           values[depth][i] = self.minimaximizer(moves[i], depth,
@@ -295,7 +296,7 @@ class MiniMaxAgent(Agent):
       sign = 1 if max_player else -1
       val = sign * np.inf
       lim = [alpha, beta]
-      for new_move in self.gh.child(player):
+      for new_move in self.gh.child_list:
         val = sign * min(sign * val,
                          sign * self.alpha_beta(new_move, depth - 1,
                                                 1 - max_player, lim[0], lim[1]))
@@ -384,15 +385,57 @@ class MiniMaxAgent(Agent):
   def mtdf(self, move, depth, f=0):
     """cf. https://en.wikipedia.org/wiki/MTD-f"""
     g, lower_bound, upper_bound = f, -np.inf, np.inf
-    counter = 0
     while lower_bound < upper_bound:
-      if time.time() - self.start >= BREAKING_TIME:
+      if time.time() - self.start >= MTDF_BREAKING_TIME:
         return g
       beta = (g + 1) if g == lower_bound else g
-      counter += 1
       g = self.alpha_beta_memory(move, depth, True, beta - 1, beta)
       if g < beta:
         upper_bound = g
       else:
         lower_bound = g
     return g
+
+  def alpha_beta_basic(self, move, depth, max_player=True, alpha=-np.inf,
+                       beta=np.inf):
+    """Same as alpha_beta, but only caring about aligning five.
+
+    Parameters
+    ----------
+    move: int, int
+      The last move being played in the position to be evaluated
+    depth: int
+      The maximum depth of the tree for lookahead in the minimax algorithm
+    max_player: bool
+      Are we maximizing or not?.
+    alpha: int
+      The current lower bound for the cutoff.
+    beta: int
+      The current upper bound for the cutoff.
+
+    Return
+    ------
+    value: int
+      The estimated value of the current node (position) being evaluated.
+    """
+    player, _ = self.return_players(max_player)
+    self.gh.basic_move(move)
+
+    val = 0
+    if depth == 0:
+      if Rules.aligned_win(self.gh.board, player):
+        val = SCORE['XXXXX'] if player.color == self.color else -SCORE['XXXXX']
+    else:
+      sign = 1 if max_player else -1
+      val = sign * np.inf
+      lim = [alpha, beta]
+      for new_move in self.gh.child_list[-8:]:
+        val = sign * min(sign * val,
+                         sign * self.alpha_beta_basic(new_move, depth - 1,
+                                                      1 - max_player, lim[0],
+                                                      lim[1]))
+        if sign * (lim[1 - max_player] - val) >= 0:
+          break
+        lim[max_player] = sign * min(sign * lim[max_player], sign * val)
+    self.gh.basic_undo()
+    return val

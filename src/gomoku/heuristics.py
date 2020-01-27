@@ -139,7 +139,7 @@ def threat_score(x, y, dx, dy, position, color, my_turn):
   return threat * (SCORE['XXX.X'] if my_turn else SCORE['OOO.O'])
 
 
-def score_for_color(position, color, my_turn, stones=[], past_scores=None):
+def color_score(position, color, my_turn, stones=[], past_scores=None):
   """Looking only at the stones of color `color`, and knowing that it's
   `my_turn` (or not), decide how good is my `position`.
 
@@ -247,11 +247,11 @@ def heuristic(position, color, my_turn, stones=[], past_scores=None):
     How the situation looks like taking into account the two players.
   """
   past_score_1, past_score_2 = past_scores if past_scores else (None, None)
-  first_score, new_past_scores_1 = score_for_color(position, color, my_turn,
-                                                   stones, past_score_1)
-  second_score, new_past_scores_2 = score_for_color(position, opposite(color),
-                                                    not my_turn, stones,
-                                                    past_score_2)
+  first_score, new_past_scores_1 = color_score(position, color, my_turn,
+                                               stones, past_score_1)
+  second_score, new_past_scores_2 = color_score(position, opposite(color),
+                                                not my_turn, stones,
+                                                past_score_2)
   return (first_score - second_score), (new_past_scores_1, new_past_scores_2)
 
 

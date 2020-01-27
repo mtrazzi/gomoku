@@ -16,7 +16,7 @@ setup(
   author='mtrazzi & kcosta',
   url='https://github.com/mtrazzi/gomoku',
   package_dir={'': 'src'},
-  packages=find_packages('src', exclude=('tests', 'docs', './gomoku.py')),
+  packages=find_packages('src', exclude=('tests')),
   tests_require=TESTS_REQUIRE,
   install_requires=[
     'numpy>=1.16.2',
