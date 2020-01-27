@@ -3,6 +3,9 @@ NAME := gomoku
 .PHONY: install test clean
 
 install:
+	@python3 -m pip install --user -e .
+
+dev:
 	@python3 -m pip install --user -e .[dev]
 
 lint:
