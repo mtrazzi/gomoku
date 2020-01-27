@@ -1,15 +1,10 @@
-import copy
-import sys
 import time
 import tkinter as tk
 
 from gomoku.agent import Agent
-from gomoku.mcts import MCTSAgent
 from gomoku.visualizer.canvas import Canvas
 from gomoku.visualizer.frames import Frames
 from gomoku.visualizer.utils import COLOR, WINDOW_WIDTH
-
-sys.setrecursionlimit(10000)
 
 
 class Visualizer(object):
@@ -65,7 +60,6 @@ class Visualizer(object):
 
     self.refresh_labels()
     self.start()
-    # self.run_mcts()
     self.root.mainloop()
 
   def refresh_labels(self):
@@ -97,10 +91,6 @@ class Visualizer(object):
       move = player.find_move(self.gameHandler)
     else:
       self.playerInput = True
-      opponent = self.gameHandler.players[1 - current]
-      if isinstance(opponent, MCTSAgent) and opponent.last_move != (-2, -2):
-        opponent.gh = copy.deepcopy(self.gameHandler)
-        opponent.mcts(10)
       if self.move is None:
         self.root.after(1, self.start)
         return
