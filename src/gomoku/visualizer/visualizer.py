@@ -100,7 +100,6 @@ class Visualizer(object):
       opponent = self.gameHandler.players[1 - current]
       if isinstance(opponent, MCTSAgent) and opponent.last_move != (-2, -2):
         opponent.gh = copy.deepcopy(self.gameHandler)
-        # self.root.after(1000, self.run_mcts)
         opponent.mcts(10)
       if self.move is None:
         self.root.after(1, self.start)

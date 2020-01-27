@@ -153,6 +153,8 @@ def score_for_color(position, color, my_turn, stones=[], past_scores=None):
     Is it my turn or not? Something to take into account when evaluating board.
   stones: int list
     List of stones (last moves, stones captured).
+  past_scores: (numpy.ndarray, numpy.ndarray)
+    Score previously computed in basic_color_score.
 
   Return
   ------
@@ -195,6 +197,8 @@ def basic_color_score(position, color, my_turn, stones=[], past_scores=None):
     Is it my turn or not? Something to take into account when evaluating board.
   stones: int list
     List of stones (last moves, stones captured).
+  past_scores: (numpy.ndarray, numpy.ndarray)
+    Score previously computed in basic_color_score.
 
   Return
   ------
@@ -221,7 +225,7 @@ def basic_color_score(position, color, my_turn, stones=[], past_scores=None):
   return tot, past_scores
 
 
-def heuristic(position, color, my_turn, stones=[], past_scores=None, depth=0):
+def heuristic(position, color, my_turn, stones=[], past_scores=None):
   """Evaluation function used for estimating the value of a node in minimax.
 
   Parameters
@@ -234,6 +238,8 @@ def heuristic(position, color, my_turn, stones=[], past_scores=None, depth=0):
     Is it my turn or not? Something to take into account when evaluating board.
   stones: int list
     List of stones (last moves, stones captured).
+  past_scores: (numpy.ndarray, numpy.ndarray)
+    Score previously computed in basic_color_score.
 
   Return
   ------

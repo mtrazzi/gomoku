@@ -12,7 +12,6 @@ from gomoku.utils import best_values, opposite
 TIME_LIMIT = 0.5
 BREAKING_TIME = 0.4 * TIME_LIMIT
 SIMPLE_EVAL_MAX_TIME = 0.5 * TIME_LIMIT
-UCB_CONSTANT = 0
 
 
 def minimax_agent_wrapper(algorithm_name):
@@ -51,8 +50,6 @@ class MiniMaxAgent(Agent):
     The color of the stone of the Agent.
   depth: int
     The maximum depth of the tree for lookahead in the minimax algorithm.
-  heuristic: string
-    The heuristic used to evaluate nodes.
   max_top_moves: int
     Maximum number of moves checked with maximum depth.
   algorithm_name: string
@@ -148,11 +145,6 @@ class MiniMaxAgent(Agent):
   def simple_evaluation(self):
     """Returns a score map for possible moves using a depth = 1 evaluation.
 
-    Parameters
-    ----------
-    game_handler: GameHandler
-      The game handler corresponding to the current position.
-
     Return
     ------
     score_map: numpy.ndarray
@@ -214,8 +206,7 @@ class MiniMaxAgent(Agent):
     position = self.gh.board.board
     stones = [player.last_move, opponent.last_move] + captures
     h_score, c_score = heuristic(position, color, my_turn, stones,
-                                 copy.deepcopy(self.color_scores),
-                                 self.ite_deep_depth)
+                                 copy.deepcopy(self.color_scores))
     self.color_scores_dict[player.last_move] = c_score
     h_past = past_heuristic(opponent.last_move, player.last_move)
     return ((h_score + capture_heuristic(player, opponent,
@@ -273,8 +264,6 @@ class MiniMaxAgent(Agent):
 
     Parameters
     ----------
-    node: GameHandler
-      The current node being evaluated (a.k.a. board position)
     move: int, int
       The last move being played in the position to be evaluated
     depth: int
@@ -323,8 +312,6 @@ class MiniMaxAgent(Agent):
 
     Parameters
     ----------
-    node: GameHandler
-      The current node being evaluated (a.k.a. board position)
     move: int, int
       The last move being played in the position to be evaluated
     depth: int

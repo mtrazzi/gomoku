@@ -42,6 +42,10 @@ class GameHandler(object):
     Player who won
   helpAgent: Agent
     Agent who predict the next move if we need help
+  begin: float
+    Time when agent started to compute move.
+  child_list: (int, int) list
+    List of possible moves for the minimax agent.
   """
   def __init__(self, board, players, script=None, size=19):
     self.board = board
