@@ -159,7 +159,9 @@ class Visualizer(object):
     if not self.readyForInput():
       return
     for _ in range(2):
-      self.gameHandler.undo_move()
+      if len(self.gameHandler.move_history) > 0:
+        self.gameHandler.undo_move()
+        self.gameHandler.turn -= 1
     for player in self.gameHandler.players:
       if hasattr(player, 'undo_scores'):
         player.color_scores = player.undo_scores
