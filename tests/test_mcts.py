@@ -47,6 +47,6 @@ def test_opponent(problem, execution_number):
   board_name, best_moves = problem
   game_handler = NODES[board_name]
   print(game_handler)
-  black_mcts_agent = MCTSAgent(BLACK, depth=5)
+  black_mcts_agent = MCTSAgent(BLACK, depth=5, time_limit=20)
   best_move = black_mcts_agent.find_move(game_handler)
   assert best_move in best_moves

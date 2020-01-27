@@ -8,9 +8,6 @@ from gomoku.rules import Rules
 from gomoku.tree import Tree
 from gomoku.utils import SLOPES, were_impacted_slope
 
-TIME_LIMIT = 20
-BREAKING_TIME = 0.45 * TIME_LIMIT
-ROLLOUT_TIME = 0.45 * TIME_LIMIT
 UCB_CONSTANT = np.sqrt(2)
 ALIGN_FIVE_VALUE = 1e2
 MAX_IMP, MAX_CHILD, MAX_RANDOM = 1e1, 1e2, 1e3
@@ -23,11 +20,14 @@ class MCTSAgent(MiniMaxAgent):
   """Agent using Monte Carlo Tree Search. Inspired from:
   - geeksforgeeks.org/ml-monte-carlo-tree-search-mcts
   - cs.swarthmore.edu/~bryce/cs63/s16/slides/2-15_MCTS.pdf"""
-  def __init__(self, color=1, depth=1):
+  def __init__(self, color=1, depth=1, time_limit=0.5):
     super().__init__(color)
     self.algorithm_name = 'mcts'
     self.tree = None
     self.rollout_depth = depth
+    self.time_limit = time_limit
+    self.breaking_time = 0.45 * time_limit
+    self.rollout_time = 0.45 * time_limit
 
   def relevant_moves(self):
     relev_mov, idx = [], 0
@@ -60,9 +60,8 @@ class MCTSAgent(MiniMaxAgent):
     while self.resources_left():
       self.mcts(n_iterations=1)
     move = self.best_child()
-    if time.time()-self.start > TIME_LIMIT:
+    if time.time()-self.start > self.time_limit:
       exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
-    self.tree.print_values()
     self.tree = self.tree.traverse_one(move)
     self.current_node = self.tree
     return move
@@ -79,7 +78,6 @@ class MCTSAgent(MiniMaxAgent):
   def pick_random(self):
     size = self.gh.size
     random_list = [(i, j) for i in range(size) for j in range(size)]
-    # move_lists = [self.imp_moves, self.gh.child_list, random_list]
     move_lists = [self.gh.child_list, random_list]
     for (move_list, max_counter) in zip(move_lists, MAX_LIST):
       move = self.pick_random_list(move_list, max_counter)
@@ -91,9 +89,9 @@ class MCTSAgent(MiniMaxAgent):
     random_move = self.pick_random()
     self.gh.basic_move(random_move)
 
-  def rollout(self, max_depth=np.inf, max_time=ROLLOUT_TIME):
+  def rollout(self, max_depth=np.inf):
     start, counter = time.time(), 0
-    while ((start - time.time()) < ROLLOUT_TIME and counter < max_depth):
+    while ((start - time.time()) < self.rollout_time and counter < max_depth):
       self.rollout_policy()
       counter += 1
     result = self.result()
@@ -132,7 +130,7 @@ class MCTSAgent(MiniMaxAgent):
       self.backpropagate_one(result)
 
   def resources_left(self):
-    return (time.time() - self.start) < BREAKING_TIME
+    return (time.time() - self.start) < self.breaking_time
 
   def fully_expanded(self):
     return len(self.gh.child_list) == len(self.current_node.children)
