@@ -30,14 +30,14 @@ if __name__ == '__main__':
                       help="Enable terminal mode.")
   parser.add_argument('-H', "--heuristic", type=str, default='?',
                       help="Heuristic function.")
-  parser.add_argument('-D', '--depth', type=int, default=2, help="Depth of the \
-                        search tree for Minimax Agents", choices=range(1, 7))
+  parser.add_argument('-D', '--depth', type=int, default=10, help="Depth of the\
+                        search tree for Minimax Agents", choices=range(1, 11))
   parser.add_argument('-p1', "--player1",
                       type=str, default="human",
                       choices=CHOICES,
                       help="Choose Player 1 behaviour.")
   parser.add_argument('-p2', "--player2",
-                      type=str, default="minimax",
+                      type=str, default="alpha_beta_basic",
                       choices=CHOICES,
                       help="Choose Player 2 behaviour.")
   parser.add_argument('-s', "--script", type=str, default=None,

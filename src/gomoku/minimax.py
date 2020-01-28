@@ -10,9 +10,10 @@ from gomoku.rules import Rules
 from gomoku.utils import best_values, opposite
 
 TIME_LIMIT = 0.5
-MTDF_BREAKING_TIME = 0.5 * TIME_LIMIT
+MTDF_BREAKING_TIME = 0.6 * TIME_LIMIT
 ITE_BREAKING_TIME = 0.6 * TIME_LIMIT
-SIMPLE_EVAL_MAX_TIME = 0.5 * TIME_LIMIT
+SIMPLE_EVAL_MAX_TIME = 0.3 * TIME_LIMIT
+MAX_CHILD = 16
 
 
 def minimax_agent_wrapper(algorithm_name):
@@ -133,8 +134,12 @@ class MiniMaxAgent(Agent):
               [[0 for _ in range(len(moves))] for _ in range(self.depth - 1)])
     depth, i = 0, len(moves)
     for depth in range(1, self.depth):
+      if self.debug:
+        print(f"depth {depth + 1}")
       for i in range(len(moves)):
         if time.time() - self.start >= ITE_BREAKING_TIME:
+          if self.debug:
+            print(f"break at iteration {i}")
           return best_values(values, depth, i)
         if self.algorithm_name == 'mtdf':
           values[depth][i] = self.minimaximizer(moves[i], depth,
@@ -252,7 +257,7 @@ class MiniMaxAgent(Agent):
     else:
       sign = 1 if max_player else -1
       val = sign * np.inf
-      for new_move in self.gh.child_list:
+      for new_move in self.gh.child_list[-MAX_CHILD:]:
         val = sign * min(sign * val,
                          sign * self.minimax(new_move, depth - 1,
                                              1 - max_player))
@@ -296,7 +301,7 @@ class MiniMaxAgent(Agent):
       sign = 1 if max_player else -1
       val = sign * np.inf
       lim = [alpha, beta]
-      for new_move in self.gh.child_list:
+      for new_move in self.gh.child_list[-MAX_CHILD:]:
         val = sign * min(sign * val,
                          sign * self.alpha_beta(new_move, depth - 1,
                                                 1 - max_player, lim[0], lim[1]))
@@ -357,7 +362,7 @@ class MiniMaxAgent(Agent):
       sign = 1 if max_player else -1
       val = sign * np.inf
       lim = [alpha, beta]
-      for new_move in self.gh.child_list:
+      for new_move in self.gh.child_list[-MAX_CHILD:]:
         val = sign * min(sign * val,
                          sign * self.alpha_beta_memory(new_move,
                                                        depth - 1,
