@@ -10,10 +10,10 @@ from gomoku.rules import Rules
 from gomoku.utils import best_values, opposite
 
 TIME_LIMIT = 0.5
-MTDF_BREAKING_TIME = 0.6 * TIME_LIMIT
-ITE_BREAKING_TIME = 0.6 * TIME_LIMIT
-SIMPLE_EVAL_MAX_TIME = 0.3 * TIME_LIMIT
-MAX_CHILD = 16
+MTDF_BREAKING_TIME = 0.5 * TIME_LIMIT
+ITE_BREAKING_TIME = 0.5 * TIME_LIMIT
+SIMPLE_EVAL_MAX_TIME = 0.35 * TIME_LIMIT
+MAX_CHILD = 32
 
 
 def minimax_agent_wrapper(algorithm_name):
@@ -106,7 +106,7 @@ class MiniMaxAgent(Agent):
     if gh.board.empty_board():
       return gh.board.center()
     self.gh = gh
-    (player, _) = self.return_players()
+    player, opponent = self.return_players()
     # need to update color scores accordingly to opponent's last move
     self.update_because_opponent_played()
     # Retrieve last captures (used in heuristics)
@@ -126,7 +126,9 @@ class MiniMaxAgent(Agent):
     # save scores and transposition table
     self.update(move_to_play)
     if time.time()-self.start > self.time_limit:
-      exit(f"Exit: agent {self.algorithm_name} took too long to find his move")
+      print(f"Agent {self.algorithm_name} lost because took >"
+            f"{self.time_limit:.1}s to find his move.")
+      self.gh.winner = opponent
     return move_to_play
 
   def iterative_deepening(self, moves, initial_values):

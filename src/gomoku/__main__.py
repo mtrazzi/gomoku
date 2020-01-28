@@ -2,9 +2,10 @@
 
 import argparse
 
+import numpy as np
+
 from gomoku.board import Board
 from gomoku.game_handler import GameHandler
-from gomoku.mcts import MCTSAgent
 from gomoku.minimax import minimax_agent_wrapper
 from gomoku.player import Player
 from gomoku.script import Script
@@ -17,7 +18,6 @@ AGENTS = {
   "alpha_beta_memory": minimax_agent_wrapper("alpha_beta_memory"),
   "alpha_beta_basic": minimax_agent_wrapper("alpha_beta_basic"),
   "mtdf": minimax_agent_wrapper("mtdf"),
-  "mcts": MCTSAgent,
 }
 CHOICES = AGENTS.keys()
 
@@ -42,6 +42,8 @@ if __name__ == '__main__':
                       help="Choose Player 2 behaviour.")
   parser.add_argument('-s', "--script", type=str, default=None,
                       help="Text file to test sequence of moves.")
+  parser.add_argument('-c', "--competition", type=float, default=np.Inf,
+                      help="Enable competition mode (max time to play).")
 
   args = parser.parse_args()
 
@@ -58,7 +60,8 @@ if __name__ == '__main__':
 
   game = GameHandler(board=Board(filename=args.board),
                      players=players,
-                     script=script)
+                     script=script,
+                     time_limit=args.competition)
 
   if args.debug:
     game.start()

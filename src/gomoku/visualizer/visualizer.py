@@ -65,7 +65,7 @@ class Visualizer(object):
   def refresh_labels(self):
     message = f"Turn {self.gameHandler.turn}"
     if self.gameHandler.winner is not None:
-      message = f"P{self.gameHandler.winner.color} won."
+      message = f"P{self.gameHandler.winner.color} won {self.gameHandler.msg}."
     self.frames.load_texts(self.gameHandler.players, self.timers, message)
     self.root.after(1000, self.refresh_labels)
 
@@ -97,6 +97,8 @@ class Visualizer(object):
       move = self.move[::-1]
 
     self.timers[current] = round(time.time() - self.begins[current])
+    if self.timers[current] > self.gameHandler.time_limit:
+      self.gameHandler.winner = self.gameHandler.players[1 - current]
 
     if not self.gameHandler.board.is_empty(*move):
       self.root.after(1, self.start)

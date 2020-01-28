@@ -47,14 +47,16 @@ class GameHandler(object):
   child_list: (int, int) list
     List of possible moves for the minimax agent.
   """
-  def __init__(self, board, players, script=None, size=19):
+  def __init__(self, board, players, script=None, size=19, time_limit=np.Inf):
     self.board = board
     self.players = players
     self.script = script
     self.size = size
+    self.time_limit = time_limit
 
     self.current = 0
     self.error = ""
+    self.msg = ""
     self.capture_history = []
     self.old_old_capture_history = []
     self.old_capture_history = []
@@ -83,6 +85,7 @@ class GameHandler(object):
 
     self.current = 0
     self.error = ""
+    self.msg = ""
     self.capture_history = []
     self.move_history = []
     self.state_history = []
@@ -139,7 +142,10 @@ class GameHandler(object):
 
     self.turn += 1
 
-    self.winner = Rules.check_winner(self.board, self.players)
+    if self.winner is None:
+      self.winner = Rules.check_winner(self.board, self.players)
+    else:
+      self.msg = "by time"
 
     print(self)
     return True
@@ -292,6 +298,7 @@ class GameHandler(object):
                         self.players[1 - self.current])
 
     representation = f"\033[2J\033[H{self.board}"
+    representation += f"Turn: {self.turn}\n"
     representation += f"X: {self.players[0].captures} stone captured\n"
     representation += f"O: {self.players[1].captures} stone captured\n"
     if self.begin > 0:
