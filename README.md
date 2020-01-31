@@ -61,12 +61,16 @@ make test
 * 0.1
     * Project is mostly finished. MCTS bot is still in development, but alpha beta & mtdf work fine.
 
-## Meta
+## Authors
 
 Michaël Trazzi – [@MichaelTrazzi](https://twitter.com/michaeltrazzi) – mtrazzi@student.42.fr
 
 Kevin Costa – [@kcosta42](https://github.com/kcosta42) – kcosta@student.42.fr
 
+## License
+
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
-This project took roughly 200 [pomodoros](https://en.wikipedia.org/wiki/Pomodoro_Technique) (~100h) between December 2019 and January 2020.
+## Context
+
+This project took roughly 200 [pomodoros](https://en.wikipedia.org/wiki/Pomodoro_Technique) (~100h) between December 2019 and January 2020, as a coding project for the Algorithmic/AI branch of [42](https://www.42.us.org/).
