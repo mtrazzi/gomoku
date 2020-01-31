@@ -64,6 +64,7 @@ make test
 ## Meta
 
 Michaël Trazzi – [@MichaelTrazzi](https://twitter.com/michaeltrazzi) – mtrazzi@student.42.fr
+
 Kevin Costa – [@kcosta42](https://github.com/kcosta42) – kcosta@student.42.fr
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
