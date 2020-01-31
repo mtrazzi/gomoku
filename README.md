@@ -50,6 +50,12 @@ make dev
 
 The project uses PEP8 coding style and flake8 (see setup.cfg).
 
+## Unit tests
+
+```sh
+make test
+```
+
 ## Release History
 
 * 0.1
