@@ -1,11 +1,11 @@
 # 42 project: Gomoku
 > AI bot that plays the game of Gomoku.
 
-The goal of the project was to implement a bot that could beat human players at the game of [Gomoku](https://en.wikipedia.org/wiki/Gomoku) with additional rules of capture and no double free threes (see the project description for more information).
+- The goal of the project was to implement a bot that could beat human players at the game of [Gomoku](https://en.wikipedia.org/wiki/Gomoku) with additional rules of capture and no double free threes (cf. [project description](https://github.com/mtrazzi/gomoku/blob/master/docs/gomoku.pdf)).
 
-We implemented [minimax](https://en.wikipedia.org/wiki/Minimax) ,[alpha-beta pruning](https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning), [MTD-f](https://en.wikipedia.org/wiki/MTD-f) and [Monte Carlo Tree Search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search) (MCTS).
+- We implemented [minimax](https://en.wikipedia.org/wiki/Minimax), [alpha-beta pruning](https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning), [MTD-f](https://en.wikipedia.org/wiki/MTD-f) and [Monte Carlo Tree Search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search).
 
-The main constraint in the project was that the AI should play in less than 0.5s. Given these constraints, the depth of our search tree can go up to 5-6 with the simplest heuristic, or 2-3 with a more complex heuristic.
+- The main constraint was to use less than `0.5s` per move. Given these constraints, the depth of our search tree can go up to 5-6 with the simplest heuristic or 2-3 with a more complex heuristic.
 
 ![example](img/example.png)
 
@@ -61,3 +61,5 @@ Michaël Trazzi – [@MichaelTrazzi](https://twitter.com/michaeltrazzi) – mtra
 Kevin Costa – [@kcosta42](https://github.com/kcosta42) – kcosta@student.42.fr
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
+
+This project took roughly 200 [pomodoros](https://en.wikipedia.org/wiki/Pomodoro_Technique) (~100h) between December 2019 and January 2020.
